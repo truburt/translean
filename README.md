@@ -150,7 +150,7 @@ TransLean is split into three cooperative services:
 - Whisper produces **preview** and **stable** transcripts.
 - Stable snapshots are **retranslated** and stored per paragraph.
 - The client receives live updates, stabilizes paragraphs, and persists history.
-- Enchant rebuilds stream live progress updates through the same WebSocket pipeline, and the UI preserves scroll position unless you're already following the bottom of the feed.
+- Enchant rebuilds stream live progress updates through the same WebSocket pipeline (the active session is registered to the conversation immediately), and the UI preserves scroll position unless you're already following the bottom of the feed.
 
 ---
 
