@@ -211,6 +211,8 @@ export function connectWebSocket() {
         if (data.source || data.translation || data.unstable_text) {
             const currentParaId = state.liveBlock?.dataset.paragraphId;
             const type = data.type || (data.is_final ? 'stable' : 'active');
+            // Normalize rebuild streaming updates to match live rendering expectations.
+            const displayType = ['chunk', 'status'].includes(type) ? 'active' : type;
 
             if (data.paragraph_id && currentParaId) {
                 if (currentParaId === 'placeholder-pending') {
@@ -232,7 +234,7 @@ export function connectWebSocket() {
                 !data.is_final,
                 data.paragraph_id,
                 data.detected_language,
-                type,
+                displayType,
                 data.unstable_text || ''
             );
 

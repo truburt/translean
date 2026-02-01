@@ -236,6 +236,7 @@ export function startSystemMessageTimer(baseText, blockElement) {
 export function renderSystemMessage(text, type = 'info') {
     if (!dom.streamContainer) return;
 
+    const scrollState = captureStreamScrollState();
     stopSystemMessageTimer();
 
     const getLastStreamBlock = () => {
@@ -265,7 +266,7 @@ export function renderSystemMessage(text, type = 'info') {
             existingTimer.remove();
         }
         content.textContent = text;
-        block.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        restoreStreamScrollState(scrollState);
     } else {
         block = document.createElement('div');
         block.className = `group relative pl-4 py-2 transition-all duration-300 type-system system-${type} flex justify-between items-center`;
@@ -280,7 +281,7 @@ export function renderSystemMessage(text, type = 'info') {
         } else {
             dom.streamContainer.appendChild(block);
         }
-        block.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        restoreStreamScrollState(scrollState);
     }
 
     if (type === 'info') {
@@ -301,7 +302,38 @@ export function ensureStreamSpacer() {
 
 // --- Stream Block ---
 
+function captureStreamScrollState() {
+    if (!dom.streamContainer) return null;
+    const container = dom.streamContainer;
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    return {
+        container,
+        scrollTop,
+        scrollHeight,
+        isNearBottom: distanceFromBottom < 120,
+    };
+}
+
+function restoreStreamScrollState(state) {
+    if (!state?.container) return;
+    const { container, scrollTop, scrollHeight, isNearBottom } = state;
+    const newScrollHeight = container.scrollHeight;
+    if (isNearBottom) {
+        const bottomOffset = Math.max(0, newScrollHeight - container.clientHeight);
+        container.scrollTo({ top: bottomOffset, behavior: 'smooth' });
+        return;
+    }
+    const delta = newScrollHeight - scrollHeight;
+    if (delta) {
+        container.scrollTop = scrollTop + delta;
+    }
+}
+
 export function updateStreamBlock(sourceText, translatedText, isLive = true, paragraphId = null, detectedLanguage = null, paragraphType = 'active', unstableText = '') {
+    const scrollState = captureStreamScrollState();
     ensureStreamSpacer();
     let block = null;
 
@@ -356,9 +388,6 @@ export function updateStreamBlock(sourceText, translatedText, isLive = true, par
             dom.streamContainer.appendChild(block);
         }
         state.liveBlock = block;
-        if (paragraphType === 'refined' || paragraphType === 'summary' || translatedText) {
-            block.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }
     }
 
     if (block.dataset.type !== paragraphType) {
@@ -374,8 +403,14 @@ export function updateStreamBlock(sourceText, translatedText, isLive = true, par
     const shouldUpdateTranslation = translatedText !== undefined;
     const showOriginal = sourceText && (sourceText !== translatedText || unstableText);
     const showUnstable = paragraphType === 'active' && Boolean(unstableText);
+    const hasExistingSource = Boolean(origEl?.textContent?.trim());
+    // Ignore empty active-source updates so transient backend payloads don't clear visible text.
+    const ignoreEmptySourceUpdate = paragraphType === 'active'
+        && (sourceText === '' || sourceText === null)
+        && !showUnstable
+        && hasExistingSource;
 
-    if (shouldUpdateSource && (sourceText || showUnstable)) {
+    if (shouldUpdateSource && !ignoreEmptySourceUpdate && (sourceText || showUnstable)) {
         if (paragraphId === 'placeholder-pending') {
             origEl.textContent = sourceText;
         } else if (showOriginal || showUnstable) {
@@ -395,14 +430,22 @@ export function updateStreamBlock(sourceText, translatedText, isLive = true, par
         } else {
             origEl.textContent = '';
         }
-    } else if (shouldUpdateSource) {
+    } else if (shouldUpdateSource && !ignoreEmptySourceUpdate) {
         origEl.textContent = '';
     }
+
+    const isPending = paragraphId && state.pendingTranslations.has(paragraphId);
+    const isTranslationBlank = translatedText === '' || translatedText === null;
+    const hasExistingTranslation = Boolean(transEl?.textContent?.trim());
+    // Preserve existing translation content on empty interim payloads while streaming.
+    const ignoreEmptyTranslationUpdate = isTranslationBlank
+        && hasExistingTranslation
+        && (isPending || (isLive && paragraphType === 'active'));
 
     if (shouldUpdateTranslation && translatedText) {
         transEl.textContent = translatedText;
         transEl.classList.remove('text-gray-400', 'italic', 'text-base', 'font-normal');
-    } else if (shouldUpdateTranslation) {
+    } else if (shouldUpdateTranslation && !ignoreEmptyTranslationUpdate) {
         if (paragraphType === 'active' && (sourceText || showUnstable) && !state.isLlmReady && !translatedText) {
             transEl.innerHTML = `
            <span class="inline-flex items-center gap-2">
@@ -417,7 +460,6 @@ export function updateStreamBlock(sourceText, translatedText, isLive = true, par
         }
     }
 
-    const isPending = paragraphId && state.pendingTranslations.has(paragraphId);
     if (isPending) {
         if (!transEl.innerHTML.includes('typing-indicator')) {
             transEl.insertAdjacentHTML('beforeend', TYPING_INDICATOR_HTML);
@@ -439,15 +481,13 @@ export function updateStreamBlock(sourceText, translatedText, isLive = true, par
         }
     }
 
-    if (isLive) {
-        if (paragraphType === 'active' && translatedText) {
-            block.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }
-    } else {
+    if (!isLive) {
         if (state.liveBlock === block) {
             state.liveBlock = null;
         }
     }
+
+    restoreStreamScrollState(scrollState);
 }
 
 // --- History UI ---
