@@ -13,18 +13,11 @@ The application is protected with an OID -based authentication. You can use your
 
 Think of it as a friendly on‑prem “live caption + translation booth” you can run at home or in a private server room. You bring the microphone, TransLean brings the magic. ✨
 
----
-
-## Docs
-- [Streaming transcription investigation](docs/streaming-transcription-investigation.md)
-- [TransLean, Codex, and Google Antigravity build log](docs/translean-codex-antigravity.md)
-
 ## Utility scripts
+
 - `scripts/tts-gen.py` generates audio from text (or timecoded word lists) using gTTS and exports WebM/Opus or other formats supported by FFmpeg (requires ffmpeg/ffprobe on PATH).
 
----
-
-## 2. System requirements (with model recommendations)
+## 2. System requirements
 
 ### Hardware overview
 | Hardware tier | Recommended Whisper model | Recommended translation model | Notes |
@@ -42,13 +35,11 @@ Think of it as a friendly on‑prem “live caption + translation booth” you c
 
 > All configuration is driven by environment variables. You can swap models or endpoints without code changes.
 
----
-
-## 3. Step-by-step installation (by component)
+## 3. Step-by-step installation
 
 ### Step 0 — Clone the repo
 ```bash
-git clone <repo url>
+gh repo clone truburt/translean
 cd translean
 ```
 
@@ -123,8 +114,6 @@ npm install
 npm run dev -- --host --port 5173
 ```
 
----
-
 ## 4. Architecture & implementation overview
 
 TransLean is split into three cooperative services:
@@ -133,12 +122,11 @@ TransLean is split into three cooperative services:
    - Records audio in the browser.
    - Sends chunks over WebSocket to `/ws/stream`.
    - Renders paragraph‑level updates and translations in real time.
-   - Keeps detected language tags inline with the first transcript line so paragraphs stay full width, even for existing blocks.
 
 2. **Backend API (FastAPI + async SQLAlchemy)**
    - Accepts streaming audio frames.
    - Manages conversations, titles, summaries, and history.
-   - Stabilizes Whisper output and re-translates updated paragraphs.
+   - Stabilizes Whisper output and translates paragraphs.
 
 3. **AI services (Whisper + Ollama)**
    - **Whisper** handles speech-to-text via the bundled `faster-whisper-server` (Docker) or the standalone FastAPI server in `faster-whisper-server/`.
@@ -147,16 +135,14 @@ TransLean is split into three cooperative services:
 ### Streaming workflow (high level)
 - The browser streams audio frames to `/ws/stream`.
 - The backend buffers and transcodes audio into 16 kHz PCM.
-- Whisper produces **preview** and **stable** transcripts.
-- Stable snapshots are **retranslated** and stored per paragraph.
+- Whisper produces short **preview** and longer **stable** transcripts.
+- Stable snapshots are **translated** and stored per paragraph.
 - The client receives live updates, stabilizes paragraphs, and persists history.
-- Enchant rebuilds stream live progress updates through the same WebSocket pipeline (the active session is registered to the conversation immediately), and the UI preserves scroll position unless you're already following the bottom of the feed.
-
----
+- **Enchant** function rebuilds the transcription and translation for the whole conversation, and creates a summary.
 
 ## 5. FAQ
 
-**Q: Does TransLean require cloud services?**  
+**Q: Does TransLean require 3rd party cloud services?**  
 A: Nope. Everything runs locally or on your own infrastructure. You control all endpoints via environment variables.
 
 **Q: Can I use my own Whisper or translation model?**  
@@ -171,7 +157,6 @@ A: CPU-only setups are functional but slow. For best live‑translation experien
 **Q: Where are conversations stored?**  
 A: In your configured PostgreSQL database (or SQLite if you set it that way). You can list, resume, delete, and rebuild conversations via REST endpoints.
 
----
-
 ## License
+
 TransLean is released under the PolyForm Noncommercial License 1.0.0. It uses a set of 3rd party dependencies such as ffmpeg and PostgreSQL. See `LICENSE` for details.
