@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.65
+- **UI:** Keep Enchant rebuild progress streaming as live updates and prevent empty interim payloads from clearing active text.
+- **UX:** Refine stream scroll anchoring so auto-scroll targets the true bottom while preserving position when not following live.
+
+## 0.3.64
+- **UI:** Normalize Enchant rebuild streaming updates so progress renders immediately in the live view.
+- **UI:** Preserve live transcription/translation text when streaming sends empty interim payloads to prevent flicker.
+- **UX:** Stabilize stream scrolling by anchoring position unless the user is already near the bottom, with smooth auto-scroll for live updates.
+
 ## 0.3.63
 - **Tools:** Replace the Edge TTS dependency in `scripts/tts-gen.py` with gTTS while keeping the timecoded synthesis workflow.
 
