@@ -1212,6 +1212,7 @@ async def websocket_stream(
     async with SessionLocal() as session:
         db_user = await get_or_create_user(session, user)
         conversation = None
+        manager_connected = False
         
         if conversation_id:
             try:
@@ -1229,6 +1230,7 @@ async def websocket_stream(
 
         if conversation and conversation.id:
             await manager.connect(conversation.id, websocket)
+            manager_connected = True
             
             # Notify if rebuild is in progress
             if conversation.id in active_rebuild_tasks:
@@ -1260,6 +1262,10 @@ async def websocket_stream(
             )
             await session.commit()
             await session.refresh(conversation, attribute_names=["paragraphs"])
+            if not manager_connected:
+                # Register new sessions immediately so rebuild progress streams to the active client.
+                await manager.connect(conversation.id, websocket)
+                manager_connected = True
 
         if not hasattr(conversation, "is_title_manual"):
             conversation.is_title_manual = False

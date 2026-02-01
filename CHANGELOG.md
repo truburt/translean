@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.66
+- **Backend:** Register newly created WebSocket conversations with the broadcast manager so Enchant rebuilds stream immediately without needing a reload.
+
 ## 0.3.65
 - **UI:** Keep Enchant rebuild progress streaming as live updates and prevent empty interim payloads from clearing active text.
 - **UX:** Refine stream scroll anchoring so auto-scroll targets the true bottom while preserving position when not following live.
