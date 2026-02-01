@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    env_file:
+      - ${TL_ENV_FILE:-.env}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-translean}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-translean}
+      POSTGRES_DB: ${POSTGRES_DB:-translean}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-translean}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ${TL_ENV_FILE:-.env}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ${TL_ENV_FILE:-.env}
+    depends_on:
+      api:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - api
+      - web
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+
+volumes:
+  db_data:

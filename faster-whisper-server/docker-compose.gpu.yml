@@ -1,0 +1,11 @@
+services:
+  faster-whisper-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.cuda
+    ports:
+      - "${PORT:-7860}:${PORT:-7860}"
+    environment:
+      DEVICE: ${DEVICE:-cuda}
+      COMPUTE_TYPE: ${COMPUTE_TYPE:-float16}
+      PORT: ${PORT:-7860}

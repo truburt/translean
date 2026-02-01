@@ -1,0 +1,351 @@
+@import "tailwindcss";
+
+@theme {
+  --color-app-bg: #FFFFFF;
+  --color-app-text: #111111;
+  --color-app-subtext: #757575;
+  --color-app-divider: #EEEEEE;
+
+  --color-accent: #2962FF;
+  --color-accent-hover: #0039Cb;
+}
+
+/* Light Mode Defaults in Base */
+:root {
+  --color-app-bg: #FFFFFF;
+  --color-app-text: #111111;
+  --color-app-subtext: #757575;
+  --color-app-divider: #EEEEEE;
+
+  --color-accent: #2962FF;
+  --color-accent-hover: #0039Cb;
+
+  --bg-app: var(--color-app-bg);
+  --text-primary: var(--color-app-text);
+  --text-secondary: var(--color-app-subtext);
+  --divider: var(--color-app-divider);
+  --accent: var(--color-accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-app: #121212;
+    --text-primary: #E0E0E0;
+    --text-secondary: #9E9E9E;
+    --divider: #333333;
+  }
+}
+
+@layer base {
+
+  html,
+  body {
+    @apply h-full;
+  }
+
+  body {
+    @apply bg-[var(--bg-app)] text-[var(--text-primary)] transition-colors duration-200 overflow-hidden;
+  }
+
+  #stream-container {
+    scroll-padding-bottom: 7rem;
+  }
+}
+
+@layer components {
+
+  /* FAB Animation */
+  .fab-recording {
+    @apply rounded-md !scale-110;
+  }
+
+  .record-fab {
+    @apply w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 border-2;
+    background-color: rgba(41, 98, 255, 0.12);
+    border-color: rgba(41, 98, 255, 0.7);
+    color: var(--color-accent);
+  }
+
+  .record-fab--enabled {
+    background-color: rgba(41, 98, 255, 0.12);
+    border-color: rgba(41, 98, 255, 0.7);
+    color: var(--color-accent);
+  }
+
+  .record-fab--disabled {
+    background-color: rgba(156, 163, 175, 0.2);
+    border-color: rgba(156, 163, 175, 0.6);
+    color: rgba(107, 114, 128, 0.9);
+    box-shadow: none;
+  }
+
+  .record-fab--recording {
+    background-color: #ef4444;
+    border-color: #dc2626;
+    color: #ffffff;
+  }
+
+  .record-fab--recording:hover {
+    background-color: #dc2626;
+  }
+
+  /* Scrollbar hide for clean look */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .fab-status-label {
+    @apply absolute -top-4 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 shadow-sm ring-1 ring-[var(--bg-app)] px-3 py-1 rounded-full text-xs font-bold transition-all duration-300 flex items-center justify-center;
+    min-width: 90px;
+    background-color: rgb(from var(--divider) r g b / 0.5);
+    color: var(--text-secondary);
+    opacity: 0.8;
+  }
+
+  .stream-bottom-spacer {
+    height: 7rem;
+  }
+
+  /* Color Pulse for Rebuild Button */
+  .animate-color-pulse {
+    animation: bg-pulse 1.5s ease-in-out infinite;
+  }
+
+  /* Action buttons container - Floating */
+  .actions-container {
+    @apply absolute bottom-24 left-1/2 -translate-x-1/2 translate-y-1/4 z-40 flex items-center gap-2 transition-all duration-300;
+  }
+
+  /* Delete Button Style - Small round button */
+  .delete-btn {
+    @apply w-12 h-12 rounded-full bg-[var(--bg-app)] text-[var(--text-secondary)] hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all duration-300 shadow-lg border border-[var(--divider)];
+  }
+
+  .delete-btn:hover {
+    @apply shadow-xl transform -translate-y-1;
+  }
+
+  .delete-btn:active {
+    @apply scale-95;
+  }
+
+  /* Enchant Button Style - Larger button */
+  .rebuild-btn {
+    @apply py-3 px-6 rounded-full bg-[var(--bg-app)] text-accent font-semibold flex items-center justify-center gap-2 transition-all duration-300 shadow-lg border border-blue-100 text-lg;
+  }
+
+  .rebuild-btn:hover {
+    @apply bg-blue-50 shadow-xl transform -translate-y-1;
+  }
+
+  .rebuild-btn:active {
+    @apply scale-95;
+  }
+
+  /* Undo notification */
+  .undo-notification {
+    @apply absolute bottom-24 left-1/2 -translate-x-1/2 z-40 bg-[var(--bg-app)] text-[var(--text-primary)] py-3 px-4 rounded-2xl shadow-xl border border-[var(--divider)] flex flex-wrap items-center justify-center gap-2 transition-all duration-300 max-w-[90vw];
+  }
+
+  .undo-btn {
+    @apply py-1 px-4 rounded-full bg-accent text-white font-medium hover:bg-accent-hover transition-colors;
+  }
+
+  .undo-text {
+    @apply text-sm text-center whitespace-normal flex-1 min-w-0;
+  }
+
+  /* History view undo button - at bottom of screen */
+  .history-undo-container {
+    @apply fixed bottom-0 left-0 right-0 z-50 bg-[var(--bg-app)] border-t border-[var(--divider)] shadow-2xl;
+    animation: slideUpFromBottom 0.3s ease-out;
+  }
+
+  .history-undo-content {
+    @apply max-w-lg mx-auto p-4 flex items-center justify-between gap-4;
+  }
+
+  .history-undo-text {
+    @apply text-[var(--text-primary)] text-sm font-medium;
+  }
+
+  .history-undo-btn {
+    @apply py-2 px-6 rounded-full bg-accent text-white font-semibold hover:bg-accent-hover transition-colors shadow-md;
+  }
+
+  @keyframes slideUpFromBottom {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Dark mode adjustments via manual vars since @apply dark: is tricky in strict layers sometimes, or just use CSS vars */
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(41, 98, 255, 0.7);
+  }
+
+  100% {
+    box-shadow: 0 0 0 15px rgba(41, 98, 255, 0);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 1.25s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes bg-pulse {
+
+  0%,
+  100% {
+    background-color: transparent;
+  }
+
+  50% {
+    background-color: rgba(41, 98, 255, 0.2);
+  }
+}
+
+/* Animations */
+.slide-in-right {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Active Paragraph Styles */
+.active-paragraph {
+  background-color: rgba(41, 98, 255, 0.05);
+  min-height: 8rem;
+}
+
+@keyframes pulse-border-opacity {
+
+  0%,
+  100% {
+    border-color: rgb(from var(--accent) r g b / 1);
+  }
+
+  50% {
+    border-color: rgb(from var(--accent) r g b / 0.5);
+  }
+}
+
+.animate-pulse-light {
+  animation: pulse-border-opacity 2s infinite;
+}
+
+/* Paragraph Types based on 'type' enum */
+.type-active {
+  border-left-width: 4px;
+  border-color: var(--accent);
+  /* animation: pulse-border-opacity 2s infinite; */
+  background-color: rgba(41, 98, 255, 0.05);
+  min-height: 8rem;
+}
+
+.type-stable {
+  @apply border-l-4 border-transparent opacity-100;
+}
+
+.type-refined {
+  @apply border-l-4 border-purple-500;
+}
+
+.type-summary {
+  @apply border-l-4 border-green-500;
+}
+
+.original-text .unstable-text {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+/* System/Virtual Paragraphs */
+.type-system {
+  @apply border-l-4 border-gray-300 bg-gray-50/50 dark:bg-gray-800/30 dark:border-gray-700 min-h-0 py-1;
+}
+
+.type-system.system-info {
+  @apply text-[var(--text-secondary)] italic;
+}
+
+.type-system.system-error {
+  @apply border-red-300 bg-red-50/50 text-red-800 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300;
+}
+
+.type-system.system-success {
+  @apply border-green-300 bg-green-50/50 text-green-800 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-300;
+}
+
+.type-system .translation-text {
+  @apply text-base font-normal text-current italic;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  @apply inline-flex items-center gap-1 h-6 ml-1;
+}
+
+.typing-indicator span {
+  @apply w-2 h-2 bg-accent rounded-full;
+  animation: floatDots 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes floatDots {
+
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}

@@ -1,0 +1,29 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "npm",
+            "script": "dev",
+            "path": "web",
+            "label": "npm: dev",
+            "detail": "Start Vite development server",
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "custom",
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "VITE v",
+                    "endsPattern": "Local:"
+                }
+            },
+            "presentation": {
+                "group": "group",
+                "reveal": "never",
+                "panel": "dedicated"
+            }
+        }
+    ]
+}

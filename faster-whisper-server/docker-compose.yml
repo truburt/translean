@@ -1,0 +1,22 @@
+services:
+  faster-whisper-server:
+    build: .
+    ports:
+      - "${PORT:-7860}:${PORT:-7860}"
+    environment:
+      PORT: ${PORT:-7860}
+      MODEL_NAME: ${MODEL_NAME:-Systran/faster-whisper-large-v3}
+      DEVICE: ${DEVICE:-auto}
+      COMPUTE_TYPE: ${COMPUTE_TYPE:-auto}
+      NUM_WORKERS: ${NUM_WORKERS:-1}
+      MODEL_TTL: ${MODEL_TTL:-}
+      MODEL_PRELOAD: ${MODEL_PRELOAD:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    command: >
+      sh -c "exec python3 -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-7860} --workers ${NUM_WORKERS:-1}"
+    volumes:
+      - ./whisper:/root/.cache/huggingface
+    device_requests:
+      - driver: nvidia
+        count: all
+        capabilities: [gpu]

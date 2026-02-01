@@ -1,0 +1,36 @@
+# Builder stage
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+WORKDIR /app
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+COPY requirements.txt .
+# Install dependencies into a flat directory
+RUN uv pip install --system --target /opt/dist -r requirements.txt
+
+# Final stage
+FROM nvidia/cuda:12.9.1-base-ubuntu24.04
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Install runtime deps (python, ffmpeg, specific cuda libs)
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    ffmpeg \
+    libcudnn9-cuda-12 \
+    libcublas-12-9 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/dist /opt/dist
+
+# Add installed packages to PYTHONPATH
+ENV PYTHONPATH="/opt/dist"
+
+COPY app /app/app
+
+EXPOSE 7860
+
+# Run uvicorn as a module to avoid binary path issues
+CMD ["/bin/sh", "-c", "exec python3 -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-7860}"]

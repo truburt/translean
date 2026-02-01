@@ -1,0 +1,104 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend: FastAPI",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--reload",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "DATABASE_URL": "sqlite+aiosqlite:///./translean.db",
+        "APP_BASE_URL": "http://localhost:8000",
+        "WHISPER_BASE_URL": "http://localhost:7860",
+        "WHISPER_MODEL": "Systran/faster-whisper-large-v3",
+        "OLLAMA_BASE_URL": "http://localhost:11434",
+        "LLM_MODEL_TRANSLATION": "translategemma:12b",
+        "ALLOWED_ORIGINS": "http://localhost:5173",
+        "DEV_MODE": "true",
+        "LOG_LEVEL": "info",
+        "LOG_FILE": "tl-backend.log"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Frontend: Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "https://localhost:5173",
+      "webRoot": "${workspaceFolder}/web",
+      "preLaunchTask": "npm: dev"
+    },
+    {
+      "name": "DB Upgrade",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "alembic",
+      "args": [
+        "upgrade",
+        "head"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "PYTHONPATH": "."
+      },
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Unit Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "-v",
+        "-s",
+        "-m",
+        "not e2e"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "PYTHONPATH": "."
+      },
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "E2E Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "-v",
+        "-s",
+        "-m",
+        "e2e"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: Backend + Frontend",
+      "configurations": [
+        "Backend: FastAPI",
+        "Frontend: Chrome"
+      ],
+      "stopAll": true
+    }
+  ]
+}

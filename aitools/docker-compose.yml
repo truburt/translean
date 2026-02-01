@@ -1,0 +1,83 @@
+services:
+  faster-whisper-server:
+    image: ghcr.io/truburt/faster-whisper-server:latest
+    container_name: faster-whisper-server
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./whisper:/root/.cache/huggingface
+    environment:
+      - MODEL_NAME=Systran/faster-whisper-large-v3
+      - DEVICE=cuda
+      - COMPUTE_TYPE=int8_float16
+      - NUM_WORKERS=1
+      - MODEL_PRELOAD=true
+      - MODEL_TTL=900
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - |
+          import urllib.request, sys
+          try:
+            r = urllib.request.urlopen("http://127.0.0.1:7860/health", timeout=2)
+            sys.exit(0 if 200 <= r.status < 300 else 1)
+          except Exception:
+            sys.exit(1)
+      interval: 15m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_ORIGINS=*
+      - OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_MAX_LOADED_MODELS=1
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    
+  ollama-model-loader:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+    command:
+      - sh
+      - -lc
+      - |
+        set -e
+        echo 'Waiting for Ollama...'
+        until curl -fsS http://ollama:11434/api/version >/dev/null; do sleep 1; done
+        echo 'Pulling translategemma:12b...'
+        curl -fsS http://ollama:11434/api/pull -H 'Content-Type: application/json' -d '{"model":"translategemma:12b","stream":false}'
+        echo -e "\nDone."

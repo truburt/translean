@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TransLean</title>
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="antialiased selection:bg-accent selection:text-white">
+  <div id="app"
+    class="h-full flex flex-col relative w-full max-w-lg mx-auto md:max-w-xl lg:max-w-none lg:mx-0 lg:flex-row lg:overflow-hidden bg-[var(--bg-app)]">
+
+    <!-- D. Sidebar Navigation (The Burger Menu) -->
+    <!-- Backdrop -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden fade-in lg:hidden"
+      onclick="toggleMenu(false)"></div>
+
+    <!-- Drawer -->
+    <aside id="menu-view"
+      class="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-[var(--bg-app)] z-50 transform -translate-x-full transition-transform duration-300 ease-out shadow-2xl flex flex-col h-full border-r border-[var(--divider)] lg:static lg:w-64 lg:max-w-none lg:!translate-x-0 lg:shadow-none lg:z-auto lg:shrink-0">
+
+      <!-- Drawer Header -->
+      <div class="p-6 border-b border-[var(--divider)] flex justify-between items-center bg-[var(--bg-app)]">
+        <h2 class="text-2xl font-bold text-[var(--text-primary)] leading-tight" data-i18n="menu_title">Menu</h2>
+        <button id="menu-close-btn"
+          class="p-2 -mr-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] icon-btn lg:hidden">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-4">
+        <button id="menu-new-session-btn"
+          class="flex items-center w-full p-2 text-[var(--text-primary)] hover:text-accent transition-colors">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span data-i18n="menu_new_translation">New Translation</span>
+        </button>
+        <button id="nav-history"
+          class="flex items-center w-full p-2 text-[var(--text-primary)] hover:text-accent transition-colors">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span data-i18n="menu_history">Translation History</span>
+        </button>
+        <button id="nav-about"
+          class="flex items-center w-full p-2 text-[var(--text-primary)] hover:text-accent transition-colors">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke-width="2" />
+            <line x1="12" y1="11" x2="12" y2="16" stroke-width="2" stroke-linecap="round" />
+            <circle cx="12" cy="7" r="1" fill="currentColor" />
+          </svg>
+          <span data-i18n="menu_about">About</span>
+        </button>
+        <div class="pt-4 space-y-2">
+          <p class="text-xs uppercase tracking-wide text-[var(--text-secondary)]" data-i18n="menu_language_label">
+            Interface language
+          </p>
+          <div class="relative">
+            <select id="ui-language-select"
+              class="w-full appearance-none bg-[var(--bg-app)] border border-[var(--divider)] text-[var(--text-primary)] rounded-lg py-2 pl-3 pr-8 focus:outline-none focus:border-accent truncate">
+              <!-- Options injected by JS -->
+            </select>
+            <div
+              class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-secondary)]">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drawer Footer (User Profile & Logout) -->
+      <div class="p-6 border-t border-[var(--divider)] bg-[var(--bg-app)] space-y-4">
+        <div class="space-y-1">
+          <p class="text-xs uppercase tracking-wide text-[var(--text-secondary)]" data-i18n="menu_signed_in_as">Signed in
+            as</p>
+          <p id="menu-user-name" class="text-lg font-semibold text-[var(--text-primary)] truncate">&nbsp;</p>
+        </div>
+        <button id="nav-logout"
+          class="flex items-center w-full p-2 -ml-2 text-red-800 hover:text-red-400 transition-colors">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+          </svg>
+          <span data-i18n="menu_logout">Logout</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- Login View -->
+    <section id="login-view"
+      class="view hidden absolute inset-0 z-50 flex items-center justify-center bg-[var(--bg-app)]">
+      <div class="text-center p-8 w-full max-w-sm">
+        <img src="/favicon.png" alt="TransLean Logo" class="w-24 h-24 mb-4 mx-auto">
+        <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-accent mb-2">
+          TransLean</h1>
+        <p class="text-[var(--text-secondary)] mb-8" data-i18n="login_tagline">Real-time translation for everyone</p>
+        <button id="login-start-button"
+          class="w-full py-3 px-6 rounded-lg bg-accent text-white font-medium hover:bg-accent-hover transition-colors shadow-lg shadow-blue-500/30">
+          <span data-i18n="login_sign_in">Sign in</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Main View -->
+    <section id="main-view" class="hidden flex flex-col h-full w-full relative lg:flex-1 lg:w-0">
+      <!-- A. Header -->
+      <header
+        class="sticky top-0 z-40 bg-[var(--bg-app)]/90 backdrop-blur-md border-b border-[var(--divider)] px-4 h-16 flex items-center justify-between shrink-0 gap-4">
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+          <button id="burger-menu-btn"
+            class="p-2 -ml-2 rounded-full hover:bg-[var(--divider)] transition-colors text-[var(--text-primary)] lg:hidden">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <span class="text-lg font-medium text-[var(--text-primary)] shrink-0">TransLean</span>
+          <span id="session-title" contenteditable="true" spellcheck="false"
+            class="hidden md:block text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app-hover)] px-2 py-1 rounded cursor-text truncate flex-1 border-l border-[var(--divider)] transition-colors outline-none focus:ring-1 focus:ring-accent focus:bg-[var(--bg-app)]"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="new-session-btn" class="p-2 rounded-full text-accent hover:bg-blue-50 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- B. Main Content (Translation Stream) -->
+      <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 scroll-smooth" id="stream-container">
+        <!-- Dynamic Content Injected Here -->
+      </main>
+
+      <!-- C. Footer Controls -->
+      <footer class="shrink-0 bg-[var(--bg-app)] border-t border-[var(--divider)] p-4 relative z-30">
+        <div class="flex items-center justify-between gap-8">
+
+          <!-- Left Side: Controls -->
+          <div class="flex-1 flex flex-col gap-3 min-w-0 items-center">
+
+            <!-- Row 1: Language Selectors -->
+            <div class="flex items-center gap-2">
+              <!-- Source Language -->
+              <div class="relative flex-1 min-w-0">
+                <select id="source-language"
+                  class="w-full appearance-none bg-[var(--bg-app)] border border-[var(--black)] text-[var(--text-primary)] text-sm rounded-lg py-2 pl-3 pr-8 focus:outline-none focus:border-accent truncate">
+                  <option value="auto">Auto</option>
+                  <!-- Options injected by JS -->
+                </select>
+                <div
+                  class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-secondary)]">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+              </div>
+
+              <button id="swap-languages-btn" type="button"
+                class="p-2 rounded-full hover:bg-[var(--divider)] transition-colors text-[var(--text-secondary)] disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                data-i18n-title="main_swap_languages" title="Swap languages">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3">
+                  </path>
+                </svg>
+              </button>
+
+              <!-- Target Language -->
+              <div class="relative flex-1 min-w-0">
+                <select id="target-language"
+                  class="w-full appearance-none bg-[var(--bg-app)] border border-[var(--black)] text-[var(--text-primary)] text-sm rounded-lg py-2 pl-3 pr-8 focus:outline-none focus:border-accent truncate">
+                  <!-- Options injected by JS -->
+                </select>
+                <div
+                  class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-secondary)]">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right Side: FAB with Status -->
+          <div class="shrink-0 ml-2 relative">
+            <span id="fab-status-label" class="fab-status-label" data-i18n="status_disconnected">Disconnected</span>
+            <button id="record-button"
+              class="record-fab record-fab--disabled hover:scale-105 active:scale-95">
+              <svg id="mic-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z">
+                </path>
+              </svg>
+              <svg id="stop-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6h12v12H6z"></path>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </footer>
+    </section>
+
+
+    <!-- Onboarding View -->
+    <section id="onboarding-view" class="view hidden relative h-full w-full flex flex-col lg:flex-1 lg:w-0">
+      <div class="flex-1 flex flex-col justify-center p-8 max-w-lg mx-auto w-full space-y-8">
+
+        <div class="text-center space-y-2">
+          <h1 class="text-3xl font-bold text-[var(--text-primary)]" data-i18n="onboarding_welcome">Welcome to
+            TransLean</h1>
+          <p class="text-[var(--text-secondary)]" data-i18n="onboarding_setup">Let's set up your languages to get
+            started.</p>
+        </div>
+
+        <!-- Section 1: Listen (Source) -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-accent" data-i18n="onboarding_listen_to">Listen to
+          </h3>
+
+          <!-- Single Select Source -->
+          <div class="relative">
+            <select id="onb-source-language"
+              class="w-full appearance-none bg-[var(--bg-app)] border border-[var(--divider)] text-[var(--text-primary)] rounded-lg p-3 pr-8 focus:outline-none focus:border-accent">
+              <option value="auto" data-i18n="onboarding_auto_detect">Auto (Detect Language)</option>
+              <!-- Options injected by JS -->
+            </select>
+            <div
+              class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-secondary)]">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Section 2: Translate to (Target) -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-accent" data-i18n="onboarding_translate_to">
+            Translate to</h3>
+          <div class="relative">
+            <select id="onb-target-language"
+              class="w-full appearance-none bg-[var(--bg-app)] border border-[var(--divider)] text-[var(--text-primary)] rounded-lg p-3 pr-8 focus:outline-none focus:border-accent">
+              <!-- Options injected by JS -->
+            </select>
+            <div
+              class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-secondary)]">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <button id="onboarding-start-btn" data-i18n="onboarding_start"
+          class="w-full py-4 rounded-lg bg-accent text-white font-bold text-lg hover:bg-accent-hover transition-colors shadow-lg shadow-blue-500/30 mt-8">
+          Start Translating
+        </button>
+
+      </div>
+    </section>
+
+    <!-- History View -->
+    <section id="history-view" class="hidden flex flex-col h-full w-full bg-[var(--bg-app)] lg:flex-1 lg:w-0">
+      <header
+        class="sticky top-0 z-40 bg-[var(--bg-app)]/90 backdrop-blur-md border-b border-[var(--divider)] px-4 h-16 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-4">
+          <button id="history-back-btn"
+            class="p-2 -ml-2 rounded-full hover:bg-[var(--divider)] transition-colors text-[var(--text-primary)]">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          <h1 class="text-xl font-bold text-[var(--text-primary)]" data-i18n="history_title">History</h1>
+        </div>
+        <button id="history-delete-all-btn"
+          class="p-2 rounded-full text-[var(--text-secondary)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          data-i18n-title="history_delete_all_title" title="Delete All History">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+            </path>
+          </svg>
+        </button>
+      </header>
+      <main class="flex-1 overflow-y-auto p-4">
+        <ul id="conversation-list" class="space-y-2">
+          <!-- Injected items -->
+        </ul>
+      </main>
+    </section>
+
+    <!-- About View -->
+    <section id="about-view" class="hidden flex flex-col h-full w-full bg-[var(--bg-app)] lg:flex-1 lg:w-0">
+      <header
+        class="sticky top-0 z-40 bg-[var(--bg-app)]/90 backdrop-blur-md border-b border-[var(--divider)] px-4 h-16 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-4">
+          <button id="about-back-btn"
+            class="p-2 -ml-2 rounded-full hover:bg-[var(--divider)] transition-colors text-[var(--text-primary)]">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          <div>
+            <p class="text-xs uppercase tracking-wide text-[var(--text-secondary)]" data-i18n="about_label">About</p>
+            <h1 class="text-xl font-bold text-[var(--text-primary)] leading-tight">TransLean</h1>
+          </div>
+        </div>
+      </header>
+      <main class="flex-1 overflow-y-auto p-4 space-y-4">
+        <section class="p-4 rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] shadow-sm space-y-2">
+          <h2 class="text-lg font-semibold text-[var(--text-primary)]" data-i18n="about_what_title">What is TransLean?
+          </h2>
+          <p class="text-[var(--text-secondary)] text-sm leading-relaxed" data-i18n="about_what_body">TransLean is a
+            real-time speech transcription
+            and
+            translation client designed for home or edge deployment. It streams microphone audio to your own backend,
+            renders live transcriptions and translations, and stores conversations so you can revisit or continue them
+            later.</p>
+        </section>
+
+        <section class="p-4 rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] shadow-sm space-y-2">
+          <h2 class="text-lg font-semibold text-[var(--text-primary)]" data-i18n="about_author_title">Author</h2>
+          <p class="text-[var(--text-secondary)] text-sm leading-relaxed" data-i18n-html="about_author_body">Built by
+            Vladimir Vaulin-Belskii
+            (<a class="text-accent hover:underline" href="mailto:burtohaos@gmail.com">burtohaos@gmail.com</a>). All
+            proprietary content is licensed under the TransLean Source Code Proprietary License unless otherwise noted.
+          </p>
+        </section>
+
+        <section class="p-4 rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] shadow-sm space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-lg font-semibold text-[var(--text-primary)]" data-i18n="about_third_party_title">Third-Party
+              Notices</h2>
+          </div>
+          <p class="text-[var(--text-secondary)] text-sm leading-relaxed" data-i18n="about_third_party_body">TransLean
+            uses the following open-source
+            components. Their licenses are acknowledged in the source distribution and summarized here for convenience.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <h3 class="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide"
+                data-i18n="about_backend_title">Backend</h3>
+              <ul class="text-[var(--text-secondary)] text-sm list-disc list-inside space-y-1">
+                <li>FastAPI — MIT License</li>
+                <li>Uvicorn — BSD 3-Clause License</li>
+                <li>SQLAlchemy &amp; Alembic — MIT License</li>
+                <li>asyncpg — BSD 3-Clause License</li>
+                <li>httpx — BSD 3-Clause License</li>
+                <li>python-jose &amp; pydantic-settings — MIT License</li>
+                <li>aiosqlite — MIT License</li>
+                <li>pytest — MIT License; pytest-asyncio — Apache 2.0</li>
+              </ul>
+            </div>
+            <div class="space-y-2">
+              <h3 class="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide"
+                data-i18n="about_client_title">Client</h3>
+              <ul class="text-[var(--text-secondary)] text-sm list-disc list-inside space-y-1">
+                <li>Vite, Tailwind CSS, PostCSS, Autoprefixer &amp; related plugins — MIT License</li>
+                <li>@ricky0123/vad-web — ISC License</li>
+                <li>onnxruntime-web — MIT License</li>
+              </ul>
+            </div>
+          </div>
+          <p class="text-[var(--text-secondary)] text-sm leading-relaxed" data-i18n="about_remote_models">Remote model
+            services (such as Whisper and
+            Ollama) are used via configurable URLs and are not bundled with the TransLean client; follow
+            their upstream licensing when hosting them.</p>
+        </section>
+      </main>
+    </section>
+
+  </div>
+  <script type="module" src="main.js"></script>
+  <script src="/ort/ort.min.js"></script>
+  <script src="/vad/bundle.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,46 @@
+name: Whisper E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "Backend base URL for WebSocket streaming tests (e.g. http://localhost:8000)"
+        required: false
+      api_ws_url:
+        description: "Optional WebSocket URL override (e.g. ws://localhost:8000/ws/stream)"
+        required: false
+      api_token:
+        description: "Bearer token for backend WebSocket auth"
+        required: false
+      whisper_base_url:
+        description: "Base URL for the Whisper server (e.g. http://localhost:7860)"
+        required: true
+      whisper_model:
+        description: "Whisper model name to send with the request"
+        required: true
+      whisper_timeout:
+        description: "Request timeout in seconds"
+        required: false
+        default: "180"
+
+jobs:
+  whisper-e2e:
+    name: Whisper E2E
+    runs-on: [self-hosted, ubuntu]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install backend dependencies
+        run: pip install --no-cache-dir -r backend/requirements.txt
+      - name: Run Whisper end-to-end tests
+        env:
+          E2E_API_BASE_URL: ${{ inputs.api_base_url }}
+          E2E_API_WS_URL: ${{ inputs.api_ws_url }}
+          E2E_API_TOKEN: ${{ inputs.api_token }}
+          E2E_WHISPER_BASE_URL: ${{ inputs.whisper_base_url }}
+          E2E_WHISPER_MODEL: ${{ inputs.whisper_model }}
+          E2E_WHISPER_TIMEOUT: ${{ inputs.whisper_timeout }}
+        run: pytest backend/tests_e2e -m e2e

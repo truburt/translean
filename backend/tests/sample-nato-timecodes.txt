@@ -1,0 +1,29 @@
+# Format: start_s,end_s,word
+# Read each word aloud. Use ~0.25s between words.
+# After every 4 words, pause for ~1.2s (silence gap).
+0.00,0.55,alpha
+0.80,1.35,bravo
+1.60,2.15,charlie
+2.40,2.95,delta
+4.15,4.70,echo
+4.95,5.50,foxtrot
+5.75,6.30,golf
+6.55,7.10,hotel
+8.30,8.85,india
+9.10,9.65,juliet
+9.90,10.45,kilo
+10.70,11.25,lima
+12.45,13.00,mike
+13.25,13.80,november
+14.05,14.60,oscar
+14.85,15.40,papa
+16.60,17.15,quebec
+17.40,17.95,romeo
+18.20,18.75,sierra
+19.00,19.55,tango
+20.75,21.30,uniform
+21.55,22.10,victor
+22.35,22.90,whiskey
+23.15,23.70,xray
+24.90,25.45,yankee
+25.70,26.25,zulu

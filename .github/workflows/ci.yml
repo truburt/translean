@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint:
+    name: Lint (Python syntax)
+    runs-on: [self-hosted, ubuntu]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install backend dependencies
+        run: pip install --no-cache-dir -r backend/requirements.txt
+      - name: Check Python syntax
+        run: python -m compileall backend/app backend/tests
+
+  build:
+    name: Build (frontend + images)
+    runs-on: [self-hosted, ubuntu]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: web
+        run: npm ci
+      - name: Lint frontend
+        working-directory: web
+        run: npm run lint
+      - name: Build frontend
+        working-directory: web
+        run: npm run build
+      - name: Build backend image
+        run: docker build -f backend/Dockerfile .
+      - name: Build web image
+        run: docker build -f web/Dockerfile .
+
+  test:
+    name: Test (backend)
+    runs-on: [self-hosted, ubuntu]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install backend dependencies
+        run: pip install --no-cache-dir -r backend/requirements.txt
+      - name: Run tests
+        working-directory: backend
+        run: pytest
