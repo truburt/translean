@@ -5,8 +5,6 @@ Copyright © 2026 Vladimir Vaulin-Belskii. All rights reserved.
 import { state } from './state.js';
 
 import { t } from './utils.js';
-// We import necessary UI functions. Circular dependency note: 
-// ui.js might import auth.js for button binding. This is OK if functions are hoisted.
 import { updateMenuUserName, showLogin, showMain, showOnboarding } from './ui.js';
 import { syncUrlState } from './router.js';
 
@@ -89,9 +87,6 @@ export function triggerRelogin(reason = 'Session expired') {
     }
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_name');
-    // state.token = null; // Handled by next lines/reload or just cleanup
-    // state.userName = '';
-    // state.activeConversationId = null;
 
     // Ideally we should just redirect
     window.location.href = '/auth/login';

@@ -19,8 +19,7 @@ from .languages import get_language_code, get_language_name
 logger = logging.getLogger(__name__)
 
 # Configs
-KEEP_ALIVE = "15m"
-
+KEEP_ALIVE = 900 # 15 min
 MAX_SUMMARY_CONTEXT_TOKENS = 6000
 CHARS_PER_TOKEN_ESTIMATE = 4
 

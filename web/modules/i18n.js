@@ -77,6 +77,8 @@ export const I18N = {
     undo_pending_delete: 'Conversation will be deleted',
     paragraph_full_translation: '✨ Full Translation:',
     paragraph_conversation_summary: '✨ Conversation Summary:',
+    btn_enchant: 'Enchant',
+    btn_enchant_processing: 'Enchanting...',
   },
   ru: {
     menu_title: 'Меню',
@@ -102,10 +104,10 @@ export const I18N = {
     about_author_title: 'Автор',
     about_author_body: 'Создан Владимиром Ваулиным-Бельским (<a class="text-accent hover:underline" href="mailto:burtohaos@gmail.com">burtohaos@gmail.com</a>). Все материалы защищены лицензией TransLean Source Code Proprietary License, если не указано иное.',
     about_third_party_title: 'Сторонние лицензии',
-    about_third_party_body: 'TransLean использует следующие компоненты с открытым исходным кодом. Их лицензии признаны в исходной поставке и кратко перечислены здесь для удобства.',
+    about_third_party_body: 'TransLean использует следующие компоненты с открытым исходным кодом. Их лицензии отражены в исходных кодах и кратко перечислены здесь для удобства.',
     about_backend_title: 'Сервер',
     about_client_title: 'Клиент',
-    about_remote_models: 'Удаленные модельные сервисы (например, Whisper и Ollama) используются через настраиваемые URL и не входят в поставку клиента TransLean; соблюдайте их лицензии при размещении.',
+    about_remote_models: 'Сервисы моделей (например, Whisper и Ollama) используются через настраиваемые URL и не входят в поставку клиента TransLean; соблюдайте их лицензии при размещении.',
     main_swap_languages: 'Поменять языки',
     status_disconnected: 'Отключено',
     status_loading: 'Загрузка',
@@ -153,6 +155,8 @@ export const I18N = {
     undo_pending_delete: 'Разговор будет удалён',
     paragraph_full_translation: '✨ Полный перевод:',
     paragraph_conversation_summary: '✨ Итог беседы:',
+    btn_enchant: 'Улучшить',
+    btn_enchant_processing: 'Улучшение...',
   },
   fi: {
     menu_title: 'Valikko',
@@ -229,5 +233,7 @@ export const I18N = {
     undo_pending_delete: 'Keskustelu poistetaan',
     paragraph_full_translation: '✨ Täysi käännös:',
     paragraph_conversation_summary: '✨ Keskustelun yhteenveto:',
+    btn_enchant: 'Paranna',
+    btn_enchant_processing: 'Parannetaan...',
   },
 };

@@ -36,18 +36,12 @@ async function init() {
   applyTranslations();
   updateStatusIndicator('DISCONNECTED');
 
-  // Non-blocking language fetch (or handled by timeout in api.js, but we await it here)
-  // If we await, we must ensure it doesn't hang forever.
   await fetchLanguages();
 
   loadLanguageUsage();
   loadLanguageSettings();
   renderSourceOptions();
   renderTargetOptions();
-
-  // init() loads tokens which calls showMain/Login.
-  // We need to setup listeners too.
-
 
   startKeepAlive();
   await applyRouteFromLocation({ replaceHistory: true });

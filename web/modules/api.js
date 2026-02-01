@@ -193,28 +193,3 @@ export async function handleDeleteConversation(id) {
         console.error(e);
     }
 }
-// Note: handleDeleteConversation is also duplicated in ui.js in my last write.
-// I should remove it from ui.js or api.js.
-// It feels more like API logic (fetch + state update). 
-// Code in ui.js used: import { handleDeleteConversation as apiDeleteConversation } from './api.js'.
-// So ui.js expects it in api.js.
-// AND ui.js implements `loadConversation` wrapper. 
-// AND `renderHistoryList` uses `handleDeleteConversation(item.id)`.
-// The onclick calls `handleDeleteConversation` which I defined as the imported `apiDeleteConversation`?
-// In `ui.js`: `delBtn.onclick = ... handleDeleteConversation(item.id)`. 
-// Wait, `handleDeleteConversation` in `ui.js` was defined at bottom (async function).
-// If `ui.js` defines it, then it doesn't need to import it.
-// I will keep it in `api.js` and remove from `ui.js` in future cleanup, OR just keep both if names don't collide (modules don't collide).
-// But `ui.js` imports `api.js`. `api.js` imports `ui.js`.
-// If I defined `handleDeleteConversation` in `ui.js`, I don't need it in `api.js`?
-// But `api.js` shouldn't do UI logic like `showHistoryUndoButton()`.
-// `api.js` should return promise. Caller (`ui.js` handler) does UI updates.
-// Refactoring to separation of concerns:
-// `api.deleteConversation(id)` -> returns true/false.
-// `ui.js` calls `api.delete...` then updates UI.
-// But original `handleDeleteConversation` was one block.
-// I'll keep it in `api.js` for now as it's cleaner to have "actions" in one place?
-// Actually `ui.js` importing `api.js` and doing the flow is better.
-// But `api.js` has `rebuildTranslation` which touches DOM (removes elements). That's UI logic.
-// So `api.js` is currently "Action Controller".
-// That is acceptable for this refactor.

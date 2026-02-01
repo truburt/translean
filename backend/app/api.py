@@ -649,44 +649,28 @@ async def rebuild_conversation_task(conversation_id: uuid.UUID):
                     # Broadcast Chunk
                     # Use standard keys 'source' and 'translation' to match frontend expectation
                     await manager.broadcast(conversation_id, {
-                        "type": "chunk", # Custom type for rebuild progress? Or mimic 'active' params?
-                        # Frontend likely renders based on 'source' and 'translation' presence
+                        "type": "chunk",
                         "paragraph_id": str(combined_paragraph.id),
                         "paragraph_index": combined_paragraph.paragraph_index,
-                        "source": aggregated_source,       # FIXED: source_text -> source
-                        "translation": aggregated_translation, # FIXED: translated_text -> translation
+                        "source": aggregated_source,
+                        "translation": aggregated_translation,
                         "detected_language": combined_languages,
                         "is_final": False,
                     })
 
                 async def broadcast_status(progress: int):
-                    status_text = f"Summarizing: {progress}%"
-                    # For status updates, we temporarily show status in source field? 
-                    # Or maybe just send a distinct status message.
-                    # Previous code updated 'status_text' into the DB as source?
-                    # "source_text": status_text in previous code.
-                    
-                    await update_paragraph_content(
-                        session,
-                        combined_paragraph.id,
-                        status_text,
-                        aggregated_translation,
-                        detected_language=combined_languages or None,
-                        paragraph_type="active",
-                    )
-                    await session.commit()
+                    status_text = f"Summarizing: {progress}%"                  
+                    # Do not update DB with ephemeral status text, preventing corruption of source_text
                     
                     await manager.broadcast(conversation_id, {
                         "type": "status",
                         "paragraph_id": str(combined_paragraph.id),
                         "paragraph_index": combined_paragraph.paragraph_index,
-                        "source": status_text,       # FIXED
-                        "translation": aggregated_translation, # FIXED
+                        "source": status_text,
+                        "translation": aggregated_translation,
+                        "detected_language": combined_languages,
                     })
 
-                # Recursively summarize (simplified for background task structure, skipping generator yield complexity for broadcast)
-                # Actually, we can reuse the logic but just await broadcast calls instead of yielding
-                
                 async def run_summerization(text_in, label_in):
                     if not text_in.strip():
                         return ""
@@ -753,16 +737,14 @@ async def rebuild_conversation_task(conversation_id: uuid.UUID):
                 # For final message, we want to replace the 'chunk' progress with the refined paragraph
                 await manager.broadcast(conversation_id, {
                     "type": "final",
-                    "dataset_updates": [ # Frontend might not support this key? 
-                        # Let's send individual paragraph updates to be safe, or check how client handles 'final'
-                        # Standard stream doesn't have 'final' type.
-                        # We might need to send a 'stable' update for the combined paragraph?
+                    "dataset_updates": [
                         {
                             "paragraph_id": str(combined_paragraph.id),
                             "paragraph_index": combined_paragraph.paragraph_index,
                             "source": combined_paragraph.source_text,
                             "translation": combined_paragraph.translated_text,
-                            "type": "refined"
+                            "type": "refined",
+                            "detected_language": combined_paragraph.detected_language,
                         },
                         {
                             "paragraph_id": str(summary_paragraph.id),
@@ -782,14 +764,7 @@ async def rebuild_conversation_task(conversation_id: uuid.UUID):
 
             except asyncio.CancelledError:
                  logger.warning("Rebuild task cancelled for conversation %s", conversation_id)
-                 # Rollback changes if cancelled mid-flight? Or commit partial? 
-                 # Safer to rollback active editing on 'combined_paragraph' if it wasn't finalized.
-                 # But we might have committed intermediate chunks. 
-                 # In this design we commit per chunk.
-                 # Let's clean up the combined paragraph if it wasn't marked stable/refined?
-                 # Actually, cancellation usually implies new input, so we probably want to discard the 'rebuild' attempt entirely
-                 # to avoid race conditions with the stream.
-                 # We can try to delete the combined paragraph.
+                 # Rollback changes if cancelled mid-flight.
                  await session.delete(combined_paragraph)
                  await session.commit()
                  raise
@@ -914,10 +889,6 @@ async def _gather_audio(
                         logger.info(f"CLIENT_LOG: {parsed.get('message')}")
                         continue
 
-                    # If stop_recording, close the file so next start gets a fresh one? 
-                    # Actually, next start will have a header, so rotation handles it. 
-                    # But we can close early if we want. 
-                    # Let's rely on header detection for robustness, OR explicit stop.
                     if parsed.get("type") == "stop_recording":
                         file_handle = _close_log_file(file_handle)
 

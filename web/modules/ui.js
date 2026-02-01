@@ -981,7 +981,7 @@ export function ensureRebuildButton() {
         </svg>
       </button>
       <button id="dynamic-rebuild-btn" class="rebuild-btn">
-        <span>✨&nbsp;Enchant</span>
+        <span>✨&nbsp;${t('btn_enchant')}</span>
       </button>
     `;
         const deleteBtn = container.querySelector('#dynamic-delete-btn');
@@ -1008,7 +1008,7 @@ export function setRebuildLoading(isLoading) {
     if (!btn) return;
     if (isLoading) {
         btn.classList.add('animate-color-pulse', 'pointer-events-none');
-        btn.innerHTML = `${SPINNER_SVG} Processing...`;
+        btn.innerHTML = `${SPINNER_SVG}&nbsp;${t('btn_enchant_processing')}`;
         btn.disabled = true;
     } else {
         btn.classList.remove('animate-color-pulse', 'pointer-events-none');

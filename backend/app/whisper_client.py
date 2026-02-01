@@ -512,7 +512,8 @@ def _deduplicate_overlap_text(current_text: str, committed_context: str, max_ove
 
         if match:
             prefix_end = current_matches[overlap_size - 1].end()
-            return current_text[prefix_end:].lstrip()
+            remainder = current_text[prefix_end:].lstrip()
+            return re.sub(r"^[,.;:!?]+", "", remainder).strip()
 
     return current_text
 
@@ -547,11 +548,7 @@ def _filter_segments(segments: List[dict], chars_removed: int) -> List[dict]:
             removed_count += seg_len
             continue
             
-        # If partially removed, checking if mostly removed or just keep?
-        # Safe strategy: If we overlap the boundary, we keep it, but it might be "stable" 
-        # largely because of the removed part.
-        # Ideally we should truncate the start timestamp? 
-        # For simplicity, we keep it. The drift is small.
+        # If partially removed, just keep for simplicity
         new_segments.append(seg)
         removed_count += seg_len
         
