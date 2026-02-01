@@ -133,6 +133,7 @@ TransLean is split into three cooperative services:
    - Records audio in the browser.
    - Sends chunks over WebSocket to `/ws/stream`.
    - Renders paragraph‑level updates and translations in real time.
+   - Keeps detected language tags inline with the first transcript line so paragraphs stay full width.
 
 2. **Backend API (FastAPI + async SQLAlchemy)**
    - Accepts streaming audio frames.

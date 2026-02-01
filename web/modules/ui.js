@@ -357,13 +357,17 @@ export function updateStreamBlock(sourceText, translatedText, isLive = true, par
         block.classList.add(`type-${paragraphType}`);
 
         const topLine = document.createElement('div');
-        topLine.className = "flex items-baseline gap-2 text-sm text-[var(--text-secondary)] mb-1 font-medium";
+        topLine.className = "text-sm text-[var(--text-secondary)] mb-1 font-medium";
         const langTag = document.createElement('span');
-        langTag.className = "font-bold text-accent uppercase tracking-wider text-xs hidden";
+        // Keep the detected language tag inline so it only shifts the first line of text.
+        langTag.className = "inline-flex items-center gap-1 font-bold text-accent uppercase tracking-wider text-xs hidden mr-2";
         langTag.textContent = "";
         const origSpan = document.createElement('span');
         origSpan.className = "original-text";
-        topLine.appendChild(langTag);
+        const origTextSpan = document.createElement('span');
+        origTextSpan.className = "original-text-content";
+        origSpan.appendChild(langTag);
+        origSpan.appendChild(origTextSpan);
         topLine.appendChild(origSpan);
 
         const botLine = document.createElement('p');
@@ -397,13 +401,14 @@ export function updateStreamBlock(sourceText, translatedText, isLive = true, par
     }
 
     const origEl = block.querySelector('.original-text');
+    const origTextEl = block.querySelector('.original-text-content') || origEl;
     const transEl = block.querySelector('.translation-text');
 
     const shouldUpdateSource = sourceText !== undefined || unstableText;
     const shouldUpdateTranslation = translatedText !== undefined;
     const showOriginal = sourceText && (sourceText !== translatedText || unstableText);
     const showUnstable = paragraphType === 'active' && Boolean(unstableText);
-    const hasExistingSource = Boolean(origEl?.textContent?.trim());
+    const hasExistingSource = Boolean(origTextEl?.textContent?.trim());
     // Ignore empty active-source updates so transient backend payloads don't clear visible text.
     const ignoreEmptySourceUpdate = paragraphType === 'active'
         && (sourceText === '' || sourceText === null)
@@ -412,26 +417,26 @@ export function updateStreamBlock(sourceText, translatedText, isLive = true, par
 
     if (shouldUpdateSource && !ignoreEmptySourceUpdate && (sourceText || showUnstable)) {
         if (paragraphId === 'placeholder-pending') {
-            origEl.textContent = sourceText;
+            origTextEl.textContent = sourceText;
         } else if (showOriginal || showUnstable) {
-            origEl.textContent = '';
+            origTextEl.textContent = '';
             const stableSpan = document.createElement('span');
             stableSpan.className = "stable-text";
             stableSpan.textContent = sourceText || '';
-            origEl.appendChild(stableSpan);
+            origTextEl.appendChild(stableSpan);
 
             if (showUnstable) {
                 const unstableSpan = document.createElement('span');
                 unstableSpan.className = "unstable-text";
                 const prefix = unstableText.startsWith(' ') ? '' : ' ';
                 unstableSpan.textContent = prefix + unstableText;
-                origEl.appendChild(unstableSpan);
+                origTextEl.appendChild(unstableSpan);
             }
         } else {
-            origEl.textContent = '';
+            origTextEl.textContent = '';
         }
     } else if (shouldUpdateSource && !ignoreEmptySourceUpdate) {
-        origEl.textContent = '';
+        origTextEl.textContent = '';
     }
 
     const isPending = paragraphId && state.pendingTranslations.has(paragraphId);
