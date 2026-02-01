@@ -2,6 +2,7 @@
 
 ## 0.3.66
 - **UI:** Render detected language tags inline with the first transcription line to keep paragraphs full width.
+- **UI:** Preserve detected language tags when upgrading existing stream blocks to the inline layout.
 
 ## 0.3.65
 - **UI:** Keep Enchant rebuild progress streaming as live updates and prevent empty interim payloads from clearing active text.

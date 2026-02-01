@@ -401,7 +401,20 @@ export function updateStreamBlock(sourceText, translatedText, isLive = true, par
     }
 
     const origEl = block.querySelector('.original-text');
-    const origTextEl = block.querySelector('.original-text-content') || origEl;
+    let origTextEl = block.querySelector('.original-text-content');
+    if (origEl && !origTextEl) {
+        origTextEl = document.createElement('span');
+        origTextEl.className = "original-text-content";
+        const langTag = origEl.querySelector('.font-bold.text-accent');
+        if (langTag) {
+            origEl.insertBefore(origTextEl, langTag.nextSibling);
+        } else {
+            origEl.appendChild(origTextEl);
+        }
+        const nodesToMove = Array.from(origEl.childNodes).filter(node => node !== langTag && node !== origTextEl);
+        nodesToMove.forEach(node => origTextEl.appendChild(node));
+    }
+    origTextEl = origTextEl || origEl;
     const transEl = block.querySelector('.translation-text');
 
     const shouldUpdateSource = sourceText !== undefined || unstableText;
