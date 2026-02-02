@@ -1,6 +1,6 @@
 # TransLean 🎧🌍
 
-## 1. Intro & overview of what TransLean does
+## 1. Overview
 TransLean is a self-hosted, real-time speech transcription **and** live translation service. Speak into your browser, and it:
 
 - **Streams your microphone audio** to a Whisper-powered backend for transcription.
@@ -12,6 +12,8 @@ TransLean is a self-hosted, real-time speech transcription **and** live translat
 The application is protected with an OID -based authentication. You can use your own setup, or e.g. Google Auth for that.
 
 Think of it as a friendly on‑prem “live caption + translation booth” you can run at home or in a private server room. You bring the microphone, TransLean brings the magic. ✨
+
+![Preview](./res/translean.gif)
 
 ## Utility scripts
 
