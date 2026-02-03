@@ -6,6 +6,7 @@ import pytest
 
 from app import whisper_client as wc
 from app.config import settings
+from app.runtime_config import runtime_config
 
 
 class MockResponse:
@@ -60,13 +61,13 @@ async def test_preview_and_stable_flow(monkeypatch):
     monkeypatch.setattr(settings, "whisper_base_url", "http://test-server")
     monkeypatch.setattr(settings, "whisper_model", "unit-test-model")
     monkeypatch.setattr(wc, "MIN_AUDIO_CHUNK_SIZE", 0)
-    monkeypatch.setattr(wc, "MIN_PREVIEW_BUFFER_SECONDS", 0)
+    monkeypatch.setattr(runtime_config, "min_preview_buffer_seconds", 0)
     # Set stable buffer to require 3 chunks or header+2chunks (7+7+7=21 bytes > 20 bytes)
     # 20 bytes / 32000 ~ 0.000625
     monkeypatch.setattr(wc, "MIN_STABLE_BUFFER_SECONDS", 0.0006)
     monkeypatch.setattr(wc, "PREVIEW_THROTTLE_SECONDS", 0)
     monkeypatch.setattr(wc, "STABLE_THROTTLE_SECONDS", 0)
-    monkeypatch.setattr(wc, "SILENCE_FINALIZE_SECONDS", 0.2)
+    monkeypatch.setattr(runtime_config, "silence_finalize_seconds", 0.2)
     monkeypatch.setattr(wc, "ContainerToPCMTranscoder", DummyTranscoder)
 
     header = b"\x1a\x45\xdf\xa3" + b"hdr"
@@ -119,7 +120,7 @@ async def test_filters_empty_and_no_speech(monkeypatch):
     monkeypatch.setattr(settings, "whisper_model", "unit-test-model")
     monkeypatch.setattr(wc, "MIN_AUDIO_CHUNK_SIZE", 0)
     monkeypatch.setattr(wc, "MIN_STABLE_BUFFER_SECONDS", 0)
-    monkeypatch.setattr(wc, "MIN_PREVIEW_BUFFER_SECONDS", 100) # Disable preview to prevent payload stealing
+    monkeypatch.setattr(runtime_config, "min_preview_buffer_seconds", 100) # Disable preview to prevent payload stealing
     monkeypatch.setattr(wc, "PREVIEW_THROTTLE_SECONDS", 100)
     monkeypatch.setattr(wc, "STABLE_THROTTLE_SECONDS", 0)
     monkeypatch.setattr(wc, "ContainerToPCMTranscoder", DummyTranscoder)
@@ -216,7 +217,7 @@ async def test_pcm_streaming_ingests_bytes(monkeypatch):
     monkeypatch.setattr(wc, "MIN_STABLE_BUFFER_SECONDS", 0)
     monkeypatch.setattr(wc, "PREVIEW_THROTTLE_SECONDS", 0)
     monkeypatch.setattr(wc, "STABLE_THROTTLE_SECONDS", 0)
-    monkeypatch.setattr(wc, "MIN_PREVIEW_BUFFER_SECONDS", 100)
+    monkeypatch.setattr(runtime_config, "min_preview_buffer_seconds", 100)
 
     async def audio_gen():
         yield b"\x01\x00\x02\x00"

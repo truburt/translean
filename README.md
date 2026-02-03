@@ -137,6 +137,7 @@ TransLean is split into three cooperative services:
 2. **Backend API (FastAPI + async SQLAlchemy)**
    - Accepts streaming audio frames.
    - Manages conversations, titles, summaries, and history.
+   - Exposes `/status` health checks for the database, Whisper, and Ollama services.
    - Stabilizes Whisper output and translates paragraphs.
 
 3. **AI services (Whisper + Ollama)**
