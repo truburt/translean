@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.68
+- **Backend:** Fix status endpoint health checks for Whisper by correcting the request block indentation.
+
 ## 0.3.67
 - **Admin UI:** Add a server settings page for admin users to update Whisper/Ollama endpoints, models, keep-alives, and Whisper streaming thresholds with immediate apply.
 - **Backend:** Persist server configuration overrides in the database, validate updates, and load them at startup.

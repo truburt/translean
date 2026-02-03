@@ -315,7 +315,7 @@ async def status_check(session: AsyncSession = Depends(get_session)):
     ollama_status = "ok"
     async with httpx.AsyncClient(timeout=3.0) as client:
         try:
-        await client.get(f"{runtime_config.whisper_base_url.rstrip('/')}/health")
+            await client.get(f"{runtime_config.whisper_base_url.rstrip('/')}/health")
         except Exception as e:
             logger.warning("Whisper service unreachable: %s", e)
             whisper_status = "unreachable"
