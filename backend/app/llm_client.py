@@ -13,13 +13,12 @@ from typing import Any, Callable, Literal, Dict
 
 import httpx
 
-from .config import settings
+from .runtime_config import runtime_config
 from .languages import get_language_code, get_language_name
 
 logger = logging.getLogger(__name__)
 
 # Configs
-KEEP_ALIVE = 900 # 15 min
 MAX_SUMMARY_CONTEXT_TOKENS = 6000
 CHARS_PER_TOKEN_ESTIMATE = 4
 
@@ -137,7 +136,7 @@ class BaseLLMClient(ABC):
     ) -> Dict[str, Any]:
         """Shared HTTP execution logic."""
         logger.debug("Ollama %s via %s (%s)", purpose, self.model_name, endpoint)
-        async with httpx.AsyncClient(base_url=settings.ollama_base_url, timeout=timeout) as client:
+        async with httpx.AsyncClient(base_url=runtime_config.ollama_base_url, timeout=timeout) as client:
             response = await client.post(endpoint, json=payload)
             response.raise_for_status()
             data = response.json()
@@ -217,7 +216,7 @@ class QwenClient(BaseLLMClient):
             "prompt": prompt,
             "system": system,
             "stream": False,
-            "keep_alive": KEEP_ALIVE,
+            "keep_alive": runtime_config.ollama_keep_alive_seconds,
             "options": {"num_ctx": num_ctx}
         }
 
@@ -245,7 +244,7 @@ class QwenClient(BaseLLMClient):
             "model": self.model_name,
             "prompt": prompt,
             "stream": False,
-            "keep_alive": KEEP_ALIVE,
+            "keep_alive": runtime_config.ollama_keep_alive_seconds,
             "options": {"num_ctx": num_ctx},
             "think": True
         }
@@ -268,7 +267,7 @@ class QwenClient(BaseLLMClient):
             "model": self.model_name,
             "prompt": prompt,
             "stream": False,
-            "keep_alive": KEEP_ALIVE,
+            "keep_alive": runtime_config.ollama_keep_alive_seconds,
             "think": False
         }
         
@@ -293,7 +292,7 @@ class QwenClient(BaseLLMClient):
             "model": self.model_name,
             "prompt": prompt,
             "stream": False,
-            "keep_alive": KEEP_ALIVE,
+            "keep_alive": runtime_config.ollama_keep_alive_seconds,
             "options": {"num_ctx": num_ctx},
             "think": False
         }
@@ -310,7 +309,7 @@ class QwenClient(BaseLLMClient):
         try:
             await self._post_ollama(
                 "/api/generate", 
-                {"model": self.model_name, "prompt": "", "stream": False, "keep_alive": KEEP_ALIVE}, 
+                {"model": self.model_name, "prompt": "", "stream": False, "keep_alive": runtime_config.ollama_keep_alive_seconds}, 
                 300.0, 
                 "warm-up"
             )
@@ -368,7 +367,7 @@ class TranslateGemmaClient(BaseLLMClient):
             "model": self.model_name,
             "messages": [{"role": "user", "content": prompt_content}],
             "stream": False,
-            "keep_alive": KEEP_ALIVE,
+            "keep_alive": runtime_config.ollama_keep_alive_seconds,
             "options": {"num_ctx": num_ctx}
         }
 
@@ -396,7 +395,7 @@ class TranslateGemmaClient(BaseLLMClient):
             "model": self.model_name,
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
-            "keep_alive": KEEP_ALIVE,
+            "keep_alive": runtime_config.ollama_keep_alive_seconds,
             "options": {"num_ctx": num_ctx}
         }
         try:
@@ -414,7 +413,7 @@ class TranslateGemmaClient(BaseLLMClient):
             "model": self.model_name,
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
-            "keep_alive": KEEP_ALIVE
+            "keep_alive": runtime_config.ollama_keep_alive_seconds
         }
         try:
             data = await self._post_ollama("/api/chat", payload, 30.0, "title generation")
@@ -431,7 +430,7 @@ class TranslateGemmaClient(BaseLLMClient):
             "model": self.model_name,
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
-            "keep_alive": KEEP_ALIVE,
+            "keep_alive": runtime_config.ollama_keep_alive_seconds,
             "options": {"num_ctx": num_ctx}
         }
         try:
@@ -445,7 +444,7 @@ class TranslateGemmaClient(BaseLLMClient):
         try:
             await self._post_ollama(
                 "/api/chat", 
-                {"model": self.model_name, "messages": [{"role": "user", "content": "hi"}], "stream": False, "keep_alive": KEEP_ALIVE}, 
+                {"model": self.model_name, "messages": [{"role": "user", "content": "hi"}], "stream": False, "keep_alive": runtime_config.ollama_keep_alive_seconds}, 
                 300.0, 
                 "warm-up"
             )
@@ -471,7 +470,7 @@ def get_llm_client(model_name: str) -> BaseLLMClient:
 
 async def warm_up() -> bool:
     """Send an empty prompt to warm up the model and keep it alive."""
-    client = get_llm_client(settings.llm_model_translation)
+    client = get_llm_client(runtime_config.llm_model_translation)
     return await client.warm_up()
 
 
@@ -484,7 +483,7 @@ async def translate_text(
     timeout: float = 30.0,
 ) -> str:
     """Translate a single text string."""
-    client = get_llm_client(settings.llm_model_translation)
+    client = get_llm_client(runtime_config.llm_model_translation)
     return await client.translate(
         text, 
         target_language_name, 
@@ -497,7 +496,7 @@ async def translate_text(
 
 async def generate_title(translated_text: str, target_language_name: str) -> str:
     """Create a concise conversation title from translated content."""
-    client = get_llm_client(settings.llm_model_translation)
+    client = get_llm_client(runtime_config.llm_model_translation)
     return await client.generate_title(translated_text, target_language_name)
 
 
@@ -508,11 +507,11 @@ async def summarize_text(
     num_ctx: int = 8192,
 ) -> str:
     """Summarize a block of text with a short description label."""
-    client = get_llm_client(settings.llm_model_translation)
+    client = get_llm_client(runtime_config.llm_model_translation)
     return await client.summarize(text, label, target_language_name, num_ctx)
 
 
 async def cleanup_text(text: str, num_ctx: int = 8192) -> str:
     """Clean up raw transcription text."""
-    client = get_llm_client(settings.llm_model_translation)
+    client = get_llm_client(runtime_config.llm_model_translation)
     return await client.cleanup(text, num_ctx)

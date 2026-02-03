@@ -54,9 +54,18 @@ cp .env.example .env
 
 Key variables to review:
 - **Database**: `DATABASE_URL`
-- **Whisper**: `WHISPER_BASE_URL`, `WHISPER_MODEL`
-- **LLM**: `OLLAMA_BASE_URL`, `LLM_MODEL_TRANSLATION`
+- **Whisper**: `WHISPER_BASE_URL`, `WHISPER_MODEL`, `WHISPER_KEEP_ALIVE_SECONDS`
+- **LLM**: `OLLAMA_BASE_URL`, `LLM_MODEL_TRANSLATION`, `OLLAMA_KEEP_ALIVE_SECONDS`
 - **Authorization**: `OIDC_*`
+- **Admin access**: `ADMIN_EMAIL_WHITELIST`
+
+Admins (emails listed in `ADMIN_EMAIL_WHITELIST`) can open the new **Server Settings** page in the web UI to override
+model endpoints, models, keep-alive durations, and Whisper streaming thresholds. These overrides are validated,
+persisted in the database, and applied immediately without a restart.
+
+Additional Whisper streaming defaults are configured via environment variables and can be overridden in the UI:
+`COMMIT_TIMEOUT_SECONDS`, `SILENCE_FINALIZE_SECONDS`, `MIN_PREVIEW_BUFFER_SECONDS`, `STABLE_WINDOW_SECONDS`,
+`NO_SPEECH_PROB_SKIP`, `NO_SPEECH_PROB_LOGPROB_SKIP`, `AVG_LOGPROB_SKIP`, and `COMPRESSION_RATIO_SKIP`.
 
 ### Step 2 — Start the main stack (API + DB + web)
 ```bash

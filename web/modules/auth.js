@@ -5,7 +5,7 @@ Copyright © 2026 Vladimir Vaulin-Belskii. All rights reserved.
 import { state } from './state.js';
 
 import { t } from './utils.js';
-import { updateMenuUserName, showLogin, showMain, showOnboarding } from './ui.js';
+import { updateMenuUserName, showLogin, showMain, showOnboarding, updateAdminMenuVisibility } from './ui.js';
 import { syncUrlState } from './router.js';
 
 export function loadTokens() {
@@ -70,10 +70,12 @@ export function handleLogout() {
     localStorage.removeItem('user_name');
     state.token = null;
     state.userName = '';
+    state.isAdmin = false;
     state.activeConversationId = null;
     state.hasSyncedConversationId = false;
     state.pendingConversationId = null;
     updateMenuUserName();
+    updateAdminMenuVisibility();
     loadTokens();
     syncUrlState(true);
 }
@@ -87,6 +89,8 @@ export function triggerRelogin(reason = 'Session expired') {
     }
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_name');
+    state.isAdmin = false;
+    updateAdminMenuVisibility();
 
     // Ideally we should just redirect
     window.location.href = '/auth/login';

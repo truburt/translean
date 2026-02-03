@@ -12,8 +12,10 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from .api import router as api_router
 from .config import settings
-from .db import engine, Base
+from .db import engine, Base, SessionLocal
 from . import models  # noqa: F401
+from .repositories import get_app_config, model_to_dict
+from .runtime_config import runtime_config
 
 # Configure logging handlers
 handlers = [logging.StreamHandler()]
@@ -46,6 +48,15 @@ async def lifespan(app: FastAPI):
         async with engine.begin() as conn:
             logger.info("Initializing Database")
             await conn.run_sync(Base.metadata.create_all)
+
+    try:
+        async with SessionLocal() as session:
+            config_row = await get_app_config(session)
+            if config_row:
+                runtime_config.apply_overrides(model_to_dict(config_row))
+                logger.info("Applied configuration overrides from database.")
+    except Exception as exc:
+        logger.warning("Failed to load configuration overrides: %s", exc)
     
     yield
 

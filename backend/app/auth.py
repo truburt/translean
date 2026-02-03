@@ -4,6 +4,7 @@ Copyright © 2026 Vladimir Vaulin-Belskii. All rights reserved.
 OIDC token verification helpers with JWKS support.
 """
 import datetime as dt
+import re
 from functools import lru_cache
 from typing import Optional
 
@@ -132,6 +133,15 @@ def decode_token(token: str) -> Optional[UserInfo]:
     return UserInfo(sub=subject, email=email, name=name)
 
 
+def is_admin_email(email: str) -> bool:
+    """Return True if the email is whitelisted as an admin."""
+    if not email:
+        return False
+    raw_list = settings.admin_email_whitelist or ""
+    candidates = {item.strip().lower() for item in re.split(r"[,\s]+", raw_list.replace(";", ",")) if item.strip()}
+    return email.strip().lower() in candidates
+
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)) -> UserInfo:
     """FastAPI dependency returning user info or raising 401."""
 
@@ -184,4 +194,3 @@ async def get_current_user_websocket(websocket: WebSocket) -> Optional[UserInfo]
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return None
     return user_info
-

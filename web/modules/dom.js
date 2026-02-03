@@ -7,6 +7,7 @@ export const views = {
     main: document.getElementById('main-view'),
     history: document.getElementById('history-view'),
     about: document.getElementById('about-view'),
+    serverSettings: document.getElementById('server-settings-view'),
     menu: document.getElementById('menu-view'),
     onboarding: document.getElementById('onboarding-view'),
     backdrop: document.getElementById('sidebar-backdrop'),
@@ -32,6 +33,24 @@ export const dom = {
     // Status
     fabStatusLabel: document.getElementById('fab-status-label'),
     sessionTitle: document.getElementById('session-title'),
+
+    // Server settings
+    serverSettingsForm: document.getElementById('server-settings-form'),
+    serverSettingsStatus: document.getElementById('server-settings-status'),
+    whisperEndpointInput: document.getElementById('whisper-endpoint'),
+    whisperModelInput: document.getElementById('whisper-model'),
+    whisperKeepAliveInput: document.getElementById('whisper-keep-alive'),
+    ollamaEndpointInput: document.getElementById('ollama-endpoint'),
+    ollamaModelInput: document.getElementById('ollama-model'),
+    ollamaKeepAliveInput: document.getElementById('ollama-keep-alive'),
+    commitTimeoutInput: document.getElementById('commit-timeout'),
+    silenceFinalizeInput: document.getElementById('silence-finalize'),
+    minPreviewBufferInput: document.getElementById('min-preview-buffer'),
+    stableWindowInput: document.getElementById('stable-window'),
+    noSpeechProbSkipInput: document.getElementById('no-speech-prob-skip'),
+    noSpeechProbLogprobSkipInput: document.getElementById('no-speech-prob-logprob-skip'),
+    avgLogprobSkipInput: document.getElementById('avg-logprob-skip'),
+    compressionRatioSkipInput: document.getElementById('compression-ratio-skip'),
 };
 
 export const buttons = {
@@ -48,9 +67,11 @@ export const buttons = {
     // Nav
     navHistory: document.getElementById('nav-history'),
     navAbout: document.getElementById('nav-about'),
+    navServerSettings: document.getElementById('nav-server-settings'),
     navLogout: document.getElementById('nav-logout'),
     historyBack: document.getElementById('history-back-btn'),
     aboutBack: document.getElementById('about-back-btn'),
+    serverSettingsBack: document.getElementById('server-settings-back-btn'),
 
     // Icons
     micIcon: document.getElementById('mic-icon'),

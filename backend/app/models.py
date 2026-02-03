@@ -68,3 +68,23 @@ class Paragraph(Base, TimestampMixin):
     type: Mapped[str] = mapped_column(String(50), default="active", nullable=False)
 
     conversation: Mapped[Conversation] = relationship(back_populates="paragraphs")
+
+
+class AppConfig(Base, TimestampMixin):
+    __tablename__ = "app_config"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    whisper_base_url: Mapped[str] = mapped_column(String(255), nullable=False)
+    whisper_model: Mapped[str] = mapped_column(String(255), nullable=False)
+    whisper_keep_alive_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    ollama_base_url: Mapped[str] = mapped_column(String(255), nullable=False)
+    llm_model_translation: Mapped[str] = mapped_column(String(255), nullable=False)
+    ollama_keep_alive_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    commit_timeout_seconds: Mapped[float] = mapped_column(nullable=False)
+    silence_finalize_seconds: Mapped[float] = mapped_column(nullable=False)
+    min_preview_buffer_seconds: Mapped[float] = mapped_column(nullable=False)
+    stable_window_seconds: Mapped[float] = mapped_column(nullable=False)
+    no_speech_prob_skip: Mapped[float] = mapped_column(nullable=False)
+    no_speech_prob_logprob_skip: Mapped[float] = mapped_column(nullable=False)
+    avg_logprob_skip: Mapped[float] = mapped_column(nullable=False)
+    compression_ratio_skip: Mapped[float] = mapped_column(nullable=False)

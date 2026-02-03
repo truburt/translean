@@ -24,19 +24,15 @@ from typing import AsyncIterator, Callable, Dict, List, Tuple
 
 import httpx
 
-from .config import settings
+from .runtime_config import runtime_config
 
 logger = logging.getLogger(__name__)
 
 # Request cadence
 PREVIEW_THROTTLE_SECONDS = 0.35
 STABLE_THROTTLE_SECONDS = 1.1
-COMMIT_TIMEOUT_SECONDS = 6.0
-SILENCE_FINALIZE_SECONDS = 1.4
 
 # Windows
-MIN_PREVIEW_BUFFER_SECONDS = 0.5
-STABLE_WINDOW_SECONDS = 5.0
 MIN_STABLE_BUFFER_SECONDS = 1.5
 UNSTABLE_TAIL_SECONDS = 1.2
 
@@ -47,11 +43,7 @@ FUZZY_MATCH_THRESHOLD = 0.82
 FUZZY_MATCH_MIN_LENGTH = 4
 MAX_COMMITTED_HISTORY_CHARS = 1000
 
-# Whisper response filters
-NO_SPEECH_PROB_SKIP = 0.85
-NO_SPEECH_PROB_LOGPROB_SKIP = 0.6
-AVG_LOGPROB_SKIP = -1.0
-COMPRESSION_RATIO_SKIP = 2.4
+# Whisper response filters are runtime-configurable.
 
 # Payloads
 MIN_AUDIO_CHUNK_SIZE = 2048
@@ -640,18 +632,18 @@ def _segment_is_filtered(segment: dict) -> bool:
     avg_logprob = segment.get("avg_logprob")
     compression_ratio = segment.get("compression_ratio")
 
-    if no_speech_prob is not None and no_speech_prob > NO_SPEECH_PROB_SKIP:
+    if no_speech_prob is not None and no_speech_prob > runtime_config.no_speech_prob_skip:
         return True
 
     if (
         avg_logprob is not None
         and no_speech_prob is not None
-        and avg_logprob < AVG_LOGPROB_SKIP
-        and no_speech_prob > NO_SPEECH_PROB_LOGPROB_SKIP
+        and avg_logprob < runtime_config.avg_logprob_skip
+        and no_speech_prob > runtime_config.no_speech_prob_logprob_skip
     ):
         return True
 
-    if compression_ratio is not None and compression_ratio > COMPRESSION_RATIO_SKIP:
+    if compression_ratio is not None and compression_ratio > runtime_config.compression_ratio_skip:
         return True
 
     return False
@@ -670,7 +662,7 @@ async def _send_transcription_request(
     params: Dict[str, object] = {
         "vad_filter": True,
         "condition_on_previous_text": False,
-        "compression_ratio_threshold": COMPRESSION_RATIO_SKIP,
+        "compression_ratio_threshold": runtime_config.compression_ratio_skip,
         "suppress_blank": True,
         "no_repeat_ngram_size": 4,
     }
@@ -680,6 +672,9 @@ async def _send_transcription_request(
 
     if prompt:
         params["initial_prompt"] = prompt
+
+    if runtime_config.whisper_keep_alive_seconds > 0:
+        params["keep_alive"] = runtime_config.whisper_keep_alive_seconds
 
     if mode == "preview":
         params.update(
@@ -701,7 +696,7 @@ async def _send_transcription_request(
         )
 
     data = {
-        "model_name": settings.whisper_model,
+        "model_name": runtime_config.whisper_model,
         "params": json.dumps(params),
     }
 
@@ -764,7 +759,7 @@ async def _send_transcription_request(
 
 
 def _build_base_url() -> str:
-    base = settings.whisper_base_url
+    base = runtime_config.whisper_base_url
     if not base.endswith("/"):
         base += "/"
     return base
@@ -787,7 +782,7 @@ async def _run_preview_pass(
     """Handle the short-lived preview transcription flow using only new audio."""
 
     preview_seconds = preview_timing.duration_seconds
-    if preview_seconds < MIN_PREVIEW_BUFFER_SECONDS:
+    if preview_seconds < runtime_config.min_preview_buffer_seconds:
         return []
 
     if now - state.last_preview_request_time < PREVIEW_THROTTLE_SECONDS:
@@ -858,7 +853,11 @@ async def _run_stable_pass(
     if not force_commit and stable_seconds < MIN_STABLE_BUFFER_SECONDS:
         return []
 
-    if not force_commit and stable_seconds < STABLE_WINDOW_SECONDS and now - state.last_stable_request_time < STABLE_THROTTLE_SECONDS:
+    if (
+        not force_commit
+        and stable_seconds < runtime_config.stable_window_seconds
+        and now - state.last_stable_request_time < STABLE_THROTTLE_SECONDS
+    ):
         return []
 
     pcm_payload = bytes(state.stable_pcm_buffer)
@@ -980,10 +979,10 @@ async def _run_stable_pass(
         remaining_unstable = max(0.0, stable_seconds - stabilized_duration)
         state.buffer_committed_offset = max(0.0, tail_to_keep - remaining_unstable)
 
-    elif stable_seconds > STABLE_WINDOW_SECONDS and not state.pending_unstable:
+    elif stable_seconds > runtime_config.stable_window_seconds and not state.pending_unstable:
         state.stable_pcm_buffer, _ = _trim_pcm_buffer(
             state.stable_pcm_buffer,
-            STABLE_WINDOW_SECONDS,
+            runtime_config.stable_window_seconds,
         )
         state.buffer_committed_offset = 0.0
 
@@ -1007,8 +1006,11 @@ async def _warmup_request(client: httpx.AsyncClient, language_code: str = "auto"
     if language_code and language_code.lower() != "auto":
         params["language"] = language_code
 
+    if runtime_config.whisper_keep_alive_seconds > 0:
+        params["keep_alive"] = runtime_config.whisper_keep_alive_seconds
+
     files = {"file": ("warmup.wav", wav_data, "audio/wav")}
-    data = {"model_name": settings.whisper_model, "params": json.dumps(params)}
+    data = {"model_name": runtime_config.whisper_model, "params": json.dumps(params)}
 
     try:
         resp = await client.post("transcribe", files=files, data=data)
@@ -1252,14 +1254,14 @@ async def stream_transcription(
                 preview_timing = _compute_pcm_timing(state.preview_delta_buffer)
                 stable_timing = _compute_pcm_timing(state.stable_pcm_buffer)
 
-                if not state.stable_pcm_buffer and silence_duration < SILENCE_FINALIZE_SECONDS:
+                if not state.stable_pcm_buffer and silence_duration < runtime_config.silence_finalize_seconds:
                     continue
 
                 if model_ready_event and not model_ready_event.is_set():
                     continue
 
-                force_commit = (now - state.last_commit_time) >= COMMIT_TIMEOUT_SECONDS or (
-                    silence_duration >= SILENCE_FINALIZE_SECONDS
+                force_commit = (now - state.last_commit_time) >= runtime_config.commit_timeout_seconds or (
+                    silence_duration >= runtime_config.silence_finalize_seconds
                 )
 
                 stable_events = await _run_stable_pass(
