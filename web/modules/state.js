@@ -55,6 +55,7 @@ export const state = {
     // UI
     menuOpen: false,
     userName: '',
+    isAdmin: false,
     reloginInProgress: false,
     uiLanguage: 'en',
     uiStatus: 'DISCONNECTED',

@@ -3,13 +3,20 @@ Copyright © 2026 Vladimir Vaulin-Belskii. All rights reserved.
 */
 
 import { state } from './state.js';
-import { toggleMenu, showHistory, showAbout, showMain } from './ui.js';
+import { toggleMenu, showHistory, showAbout, showMain, showServerSettings } from './ui.js';
+import { loadServerSettings } from './serverSettings.js';
 import { loadConversationDetail } from './api.js';
 
 export function getRouteFromLocation() {
     const params = new URLSearchParams(window.location.search);
     const viewParam = params.get('view');
-    const view = viewParam === 'history' ? 'history' : viewParam === 'about' ? 'about' : 'main';
+    const view = viewParam === 'history'
+        ? 'history'
+        : viewParam === 'about'
+            ? 'about'
+            : viewParam === 'server_settings'
+                ? 'server_settings'
+                : 'main';
     return {
         view,
         conversationId: view === 'main' ? params.get('conversation_id') : null,
@@ -19,7 +26,9 @@ export function getRouteFromLocation() {
 
 export function buildUrlFromRoute(route) {
     const params = new URLSearchParams();
-    if (route.view === 'history' || route.view === 'about') params.set('view', route.view);
+    if (route.view === 'history' || route.view === 'about' || route.view === 'server_settings') {
+        params.set('view', route.view);
+    }
     if (route.conversationId) params.set('conversation_id', route.conversationId);
     if (route.menuOpen) params.set('menu', 'open');
 
@@ -29,7 +38,13 @@ export function buildUrlFromRoute(route) {
 
 export function deriveRouteFromState(overrides = {}) {
     const desiredView = overrides.view ?? state.activeView;
-    const view = desiredView === 'history' ? 'history' : desiredView === 'about' ? 'about' : 'main';
+    const view = desiredView === 'history'
+        ? 'history'
+        : desiredView === 'about'
+            ? 'about'
+            : desiredView === 'server_settings'
+                ? 'server_settings'
+                : 'main';
     return {
         view,
         conversationId: view === 'main' ? (overrides.conversationId ?? state.activeConversationId) : null,
@@ -60,6 +75,9 @@ export async function applyRouteFromLocation(options = {}) {
         showHistory({ skipRouting: true });
     } else if (route.view === 'about') {
         showAbout({ skipRouting: true });
+    } else if (route.view === 'server_settings') {
+        showServerSettings({ skipRouting: true });
+        await loadServerSettings();
     } else {
         showMain({ skipRouting: true });
     }

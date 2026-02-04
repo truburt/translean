@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from . import models
-from .auth import decode_token, exchange_code_for_token, get_current_user, get_current_user_websocket, get_authorization_endpoint
+from .auth import decode_token, exchange_code_for_token, get_current_user, get_current_user_websocket, get_authorization_endpoint, is_admin_email
 from .config import settings
 from .db import SessionLocal, get_session
 from .llm_client import (
@@ -49,13 +49,15 @@ from .repositories import (
     delete_pending_conversations,
     get_conversation,
     get_or_create_user,
+    upsert_app_config,
     list_conversations,
     mark_conversation_pending_deletion,
     restore_conversation,
     update_paragraph_content,
 )
-from .schemas import ConversationCreate, ConversationListItem, ConversationOut, UserInfo, ConversationTitleUpdate
+from .schemas import ConversationCreate, ConversationListItem, ConversationOut, UserInfo, ConversationTitleUpdate, ServerConfig
 from .whisper_client import stream_transcription, warm_up as warm_up_whisper
+from .runtime_config import runtime_config
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +119,12 @@ def _safe_paragraph_index(p):
         return int(getattr(p, "paragraph_index", 0) or 0)
     except Exception:
         return 0
+
+
+def _require_admin(user: UserInfo) -> None:
+    """Ensure the current user has admin privileges."""
+    if not is_admin_email(user.email):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
 
 @router.get("/health")
@@ -286,7 +294,7 @@ def split_text_for_summary(text: str, token_limit: int = MAX_SUMMARY_CONTEXT_TOK
 @router.get("/api/languages")
 async def get_languages():
     """Return supported source and target languages."""
-    langs = get_supported_languages(settings.llm_model_translation)
+    langs = get_supported_languages(runtime_config.llm_model_translation)
     return {
         "source": langs,
         "target": langs,
@@ -307,12 +315,12 @@ async def status_check(session: AsyncSession = Depends(get_session)):
     ollama_status = "ok"
     async with httpx.AsyncClient(timeout=3.0) as client:
         try:
-            await client.get(f"{settings.whisper_base_url.rstrip('/')}/health")
+            await client.get(f"{runtime_config.whisper_base_url.rstrip('/')}/health")
         except Exception as e:
             logger.warning("Whisper service unreachable: %s", e)
             whisper_status = "unreachable"
         try:
-            await client.get(f"{settings.ollama_base_url.rstrip('/')}/api/tags")
+            await client.get(f"{runtime_config.ollama_base_url.rstrip('/')}/api/tags")
         except Exception as e:
             logger.warning("Ollama service unreachable: %s", e)
             ollama_status = "unreachable"
@@ -420,7 +428,35 @@ async def auth_callback(request: Request):
 @router.get("/auth/verify")
 async def verify_auth(user: UserInfo = Depends(get_current_user)):
     """Verify checks if the current token is valid."""
-    return {"status": "authenticated", "user": user.sub}
+    return {
+        "status": "authenticated",
+        "user": user.sub,
+        "email": user.email,
+        "name": user.name,
+        "is_admin": is_admin_email(user.email),
+    }
+
+
+@router.get("/api/admin/config", response_model=ServerConfig)
+async def get_server_config(user: UserInfo = Depends(get_current_user)):
+    """Return the current server configuration (admin-only)."""
+    _require_admin(user)
+    return ServerConfig(**runtime_config.as_dict())
+
+
+@router.put("/api/admin/config", response_model=ServerConfig)
+async def update_server_config(
+    payload: ServerConfig,
+    session: AsyncSession = Depends(get_session),
+    user: UserInfo = Depends(get_current_user),
+):
+    """Update server configuration overrides and apply them immediately (admin-only)."""
+    _require_admin(user)
+    config_data = payload.model_dump()
+    await upsert_app_config(session, config_data)
+    await session.commit()
+    runtime_config.apply_overrides(config_data)
+    return ServerConfig(**runtime_config.as_dict())
 
 
 @router.get("/api/conversations", response_model=list[ConversationListItem])

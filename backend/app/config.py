@@ -18,9 +18,20 @@ class Settings(BaseSettings):
 
     whisper_base_url: str = "http://localhost:8000"
     whisper_model: str = "Systran/faster-whisper-large-v3"
+    whisper_keep_alive_seconds: int = 900
 
     ollama_base_url: str = "http://localhost:11434"
     llm_model_translation: str = "translategemma:12b"
+    ollama_keep_alive_seconds: int = 900
+
+    commit_timeout_seconds: float = 6.0
+    silence_finalize_seconds: float = 1.4
+    min_preview_buffer_seconds: float = 0.5
+    stable_window_seconds: float = 5.0
+    no_speech_prob_skip: float = 0.85
+    no_speech_prob_logprob_skip: float = 0.6
+    avg_logprob_skip: float = -1.0
+    compression_ratio_skip: float = 2.4
 
     oidc_issuer_url: str = "https://example-issuer"
     oidc_client_id: str = "example-client"
@@ -29,6 +40,7 @@ class Settings(BaseSettings):
     oidc_scope: str = "openid email profile"
     allowed_origins: str = "*"
     forwarded_allow_ips: str = "*"
+    admin_email_whitelist: str = ""
 
     # Security: use secure cookies in production (HTTPS)
     use_secure_cookies: bool = True

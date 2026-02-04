@@ -86,6 +86,7 @@ export function hideAllViews() {
     views.onboarding.classList.add('hidden');
     views.history.classList.add('hidden');
     views.about.classList.add('hidden');
+    views.serverSettings.classList.add('hidden');
 
     if (state.activeView === 'history') {
         hideHistoryUndoButton();
@@ -131,6 +132,33 @@ export function showAbout(options = {}) {
     state.pendingConversationId = null;
     if (!skipRouting) {
         syncUrlState();
+    }
+}
+
+export function showServerSettings(options = {}) {
+    const { skipRouting = false } = options;
+    if (!state.isAdmin) {
+        showMain({ skipRouting: true });
+        alert(t('admin_access_denied'));
+        return;
+    }
+    hideAllViews();
+    views.serverSettings.classList.remove('hidden');
+    state.activeView = 'server_settings';
+    state.activeConversationId = null;
+    state.hasSyncedConversationId = false;
+    state.pendingConversationId = null;
+    if (!skipRouting) {
+        syncUrlState();
+    }
+}
+
+export function updateAdminMenuVisibility() {
+    if (!buttons.navServerSettings) return;
+    if (state.isAdmin) {
+        buttons.navServerSettings.classList.remove('hidden');
+    } else {
+        buttons.navServerSettings.classList.add('hidden');
     }
 }
 

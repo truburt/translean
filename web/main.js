@@ -7,17 +7,18 @@ import { dom, buttons, views } from './modules/dom.js';
 
 import { t, getInitialUiLanguage } from './modules/utils.js';
 import { loadTokens, handleLogin, handleLogout } from './modules/auth.js';
-import { fetchLanguages, fetchWithAuth, saveTitle } from './modules/api.js';
+import { fetchLanguages, fetchWithAuth, saveTitle, fetchAuthStatus } from './modules/api.js';
 import {
   applyTranslations, updateStatusIndicator, renderSourceOptions, renderTargetOptions,
   loadLanguageUsage, loadLanguageSettings, saveLanguageSettings,
   renderSystemMessage, syncLanguageUI, setUiLanguage, setupUiLanguageSelect,
-  showHistory, showAbout, showMain, toggleMenu, handleLanguageSwap, resetSession,
-  handleUndoDelete
+  showHistory, showAbout, showMain, showServerSettings, toggleMenu, handleLanguageSwap, resetSession,
+  handleUndoDelete, updateAdminMenuVisibility
 } from './modules/ui.js';
 import { toggleRecording } from './modules/audio.js'; // startRecording if needed
 import { connectWebSocket, sendConfig } from './modules/websocket.js';
 import { applyRouteFromLocation, handlePopState } from './modules/router.js';
+import { handleSaveServerSettings, loadServerSettings } from './modules/serverSettings.js';
 
 // Re-map a few things for listeners
 import { recordLanguageUsage } from './modules/ui.js';
@@ -37,6 +38,7 @@ async function init() {
   updateStatusIndicator('DISCONNECTED');
 
   await fetchLanguages();
+  await refreshAuthStatus();
 
   loadLanguageUsage();
   loadLanguageSettings();
@@ -54,6 +56,22 @@ async function init() {
   if (state.activeView === 'main' && !state.activeConversationId) {
     renderSystemMessage(t('system_loading'));
   }
+}
+
+async function refreshAuthStatus() {
+  if (!state.token) {
+    state.isAdmin = false;
+    updateAdminMenuVisibility();
+    return;
+  }
+  try {
+    const status = await fetchAuthStatus();
+    state.isAdmin = Boolean(status.is_admin);
+  } catch (e) {
+    console.warn('Failed to refresh auth status:', e);
+    state.isAdmin = false;
+  }
+  updateAdminMenuVisibility();
 }
 
 function startKeepAlive() {
@@ -90,6 +108,13 @@ function setupEventListeners() {
     toggleMenu(false);
     showAbout();
   });
+  if (buttons.navServerSettings) {
+    buttons.navServerSettings.addEventListener('click', async () => {
+      toggleMenu(false);
+      showServerSettings();
+      await loadServerSettings();
+    });
+  }
   buttons.navLogout.addEventListener('click', () => {
     toggleMenu(false);
     handleLogout();
@@ -103,6 +128,9 @@ function setupEventListeners() {
     window.history.back();
   });
   buttons.aboutBack.addEventListener('click', () => window.history.back());
+  if (buttons.serverSettingsBack) {
+    buttons.serverSettingsBack.addEventListener('click', () => window.history.back());
+  }
 
   if (buttons.menuNewSession) {
     buttons.menuNewSession.addEventListener('click', () => {
@@ -157,6 +185,10 @@ function setupEventListeners() {
     dom.uiLanguageSelect.addEventListener('change', (event) => {
       setUiLanguage(event.target.value);
     });
+  }
+
+  if (dom.serverSettingsForm) {
+    dom.serverSettingsForm.addEventListener('submit', handleSaveServerSettings);
   }
 
   // Title Editing

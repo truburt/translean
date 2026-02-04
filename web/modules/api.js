@@ -71,6 +71,31 @@ export async function fetchLanguages() {
     }
 }
 
+export async function fetchAuthStatus() {
+    const res = await fetchWithAuth('/auth/verify');
+    if (!res.ok) throw new Error('Failed to verify auth');
+    return res.json();
+}
+
+export async function fetchServerConfig() {
+    const res = await fetchWithAuth('/api/admin/config');
+    if (!res.ok) throw new Error('Failed to load server configuration');
+    return res.json();
+}
+
+export async function updateServerConfig(payload) {
+    const res = await fetchWithAuth('/api/admin/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || 'Failed to save server configuration');
+    }
+    return res.json();
+}
+
 export async function saveTitle(newTitle) {
     if (!state.activeConversationId || !newTitle) {
         return;

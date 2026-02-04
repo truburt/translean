@@ -59,6 +59,15 @@
           </svg>
           <span data-i18n="menu_about">About</span>
         </button>
+        <button id="nav-server-settings"
+          class="hidden flex items-center w-full p-2 text-[var(--text-primary)] hover:text-accent transition-colors">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8c1.657 0 3-1.343 3-3S13.657 2 12 2 9 3.343 9 5s1.343 3 3 3zm0 0v2m6 4a4 4 0 01-4 4H8a4 4 0 01-4-4v-1a4 4 0 014-4h8a4 4 0 014 4v1z">
+            </path>
+          </svg>
+          <span data-i18n="menu_server_settings">Server Settings</span>
+        </button>
         <div class="pt-4 space-y-2">
           <p class="text-xs uppercase tracking-wide text-[var(--text-secondary)]" data-i18n="menu_language_label">
             Interface language
@@ -379,6 +388,134 @@
             Ollama) are used via configurable URLs and are not bundled with the TransLean client; follow
             their upstream licensing when hosting them.</p>
         </section>
+      </main>
+    </section>
+
+    <!-- Server Settings View -->
+    <section id="server-settings-view" class="hidden flex flex-col h-full w-full bg-[var(--bg-app)] lg:flex-1 lg:w-0">
+      <header
+        class="sticky top-0 z-40 bg-[var(--bg-app)]/90 backdrop-blur-md border-b border-[var(--divider)] px-4 h-16 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-4">
+          <button id="server-settings-back-btn"
+            class="p-2 -ml-2 rounded-full hover:bg-[var(--divider)] transition-colors text-[var(--text-primary)]">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          <div>
+            <p class="text-xs uppercase tracking-wide text-[var(--text-secondary)]" data-i18n="server_settings_label">
+              Server Settings</p>
+            <h1 class="text-xl font-bold text-[var(--text-primary)] leading-tight"
+              data-i18n="server_settings_title">Server Settings</h1>
+          </div>
+        </div>
+      </header>
+      <main class="flex-1 overflow-y-auto p-4 space-y-6">
+        <form id="server-settings-form" class="space-y-6">
+          <section class="p-4 rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] shadow-sm space-y-3">
+            <h2 class="text-lg font-semibold text-[var(--text-primary)]" data-i18n="server_settings_whisper_title">
+              Whisper</h2>
+            <div class="space-y-2">
+              <label class="text-sm text-[var(--text-secondary)]" data-i18n="server_settings_whisper_endpoint">Endpoint</label>
+              <input id="whisper-endpoint" type="url" required
+                class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm text-[var(--text-secondary)]" data-i18n="server_settings_whisper_model">Model</label>
+              <input id="whisper-model" type="text" required
+                class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm text-[var(--text-secondary)]"
+                data-i18n="server_settings_whisper_keep_alive">Keep alive (seconds)</label>
+              <input id="whisper-keep-alive" type="number" min="0" max="86400" step="1" required
+                class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+            </div>
+          </section>
+
+          <section class="p-4 rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] shadow-sm space-y-3">
+            <h2 class="text-lg font-semibold text-[var(--text-primary)]" data-i18n="server_settings_ollama_title">
+              Ollama</h2>
+            <div class="space-y-2">
+              <label class="text-sm text-[var(--text-secondary)]" data-i18n="server_settings_ollama_endpoint">Endpoint</label>
+              <input id="ollama-endpoint" type="url" required
+                class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm text-[var(--text-secondary)]" data-i18n="server_settings_ollama_model">Model</label>
+              <input id="ollama-model" type="text" required
+                class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm text-[var(--text-secondary)]"
+                data-i18n="server_settings_ollama_keep_alive">Keep alive (seconds)</label>
+              <input id="ollama-keep-alive" type="number" min="0" max="86400" step="1" required
+                class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+            </div>
+          </section>
+
+          <section class="p-4 rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] shadow-sm space-y-3">
+            <h2 class="text-lg font-semibold text-[var(--text-primary)]"
+              data-i18n="server_settings_whisper_client_title">Whisper Client</h2>
+            <div class="grid grid-cols-1 gap-4">
+              <div class="space-y-2">
+                <label class="text-sm text-[var(--text-secondary)]"
+                  data-i18n="server_settings_commit_timeout">Commit timeout (seconds)</label>
+                <input id="commit-timeout" type="number" min="1" max="60" step="0.1" required
+                  class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-sm text-[var(--text-secondary)]"
+                  data-i18n="server_settings_silence_finalize">Silence finalize (seconds)</label>
+                <input id="silence-finalize" type="number" min="0.1" max="10" step="0.1" required
+                  class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-sm text-[var(--text-secondary)]"
+                  data-i18n="server_settings_min_preview_buffer">Min preview buffer (seconds)</label>
+                <input id="min-preview-buffer" type="number" min="0.1" max="5" step="0.1" required
+                  class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-sm text-[var(--text-secondary)]"
+                  data-i18n="server_settings_stable_window">Stable window (seconds)</label>
+                <input id="stable-window" type="number" min="1" max="30" step="0.1" required
+                  class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-sm text-[var(--text-secondary)]"
+                  data-i18n="server_settings_no_speech_prob_skip">No speech prob skip</label>
+                <input id="no-speech-prob-skip" type="number" min="0" max="1" step="0.01" required
+                  class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-sm text-[var(--text-secondary)]"
+                  data-i18n="server_settings_no_speech_prob_logprob_skip">No speech prob/logprob skip</label>
+                <input id="no-speech-prob-logprob-skip" type="number" min="0" max="1" step="0.01" required
+                  class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-sm text-[var(--text-secondary)]"
+                  data-i18n="server_settings_avg_logprob_skip">Avg logprob skip</label>
+                <input id="avg-logprob-skip" type="number" min="-10" max="0" step="0.1" required
+                  class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-sm text-[var(--text-secondary)]"
+                  data-i18n="server_settings_compression_ratio_skip">Compression ratio skip</label>
+                <input id="compression-ratio-skip" type="number" min="1" max="10" step="0.1" required
+                  class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+              </div>
+            </div>
+          </section>
+
+          <div class="flex flex-col gap-3">
+            <p id="server-settings-status" class="text-sm text-[var(--text-secondary)]"></p>
+            <button type="submit"
+              class="w-full py-3 rounded-lg bg-accent text-white font-semibold hover:bg-accent-hover transition-colors shadow-lg shadow-blue-500/30"
+              data-i18n="server_settings_save">Save Settings</button>
+          </div>
+        </form>
       </main>
     </section>
 

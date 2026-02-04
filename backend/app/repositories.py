@@ -194,3 +194,25 @@ async def delete_pending_conversations(session: AsyncSession, user: models.User)
         models.Conversation.pending_deletion == True
     )
     await session.execute(stmt)
+
+
+async def get_app_config(session: AsyncSession) -> models.AppConfig | None:
+    """Fetch the latest application configuration override row."""
+    result = await session.execute(select(models.AppConfig).order_by(models.AppConfig.id.desc()).limit(1))
+    return result.scalar_one_or_none()
+
+
+async def upsert_app_config(session: AsyncSession, config_data: dict) -> models.AppConfig:
+    """Insert or update the application configuration override row."""
+    existing = await get_app_config(session)
+    if existing:
+        for key, value in config_data.items():
+            if hasattr(existing, key):
+                setattr(existing, key, value)
+        await session.flush()
+        return existing
+
+    app_config = models.AppConfig(**config_data)
+    session.add(app_config)
+    await session.flush()
+    return app_config
