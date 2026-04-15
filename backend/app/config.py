@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     llm_model_translation: str = "translategemma:12b"
     ollama_keep_alive_seconds: int = 900
+    pipeline_mode: str = "legacy_whisper_ollama"
+    gemma_base_url: str = "http://localhost:8010"
+    gemma_model: str = "google/gemma-4-E4B-it"
+    gemma_keep_alive_seconds: int = 900
 
     commit_timeout_seconds: float = 6.0
     silence_finalize_seconds: float = 1.4

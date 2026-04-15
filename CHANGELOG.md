@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.71
+- **Tests:** Make E2E suites environment-aware by skipping when required external services (Whisper/Ollama) are unreachable.
+- **Tests:** Force unit tests to run with the legacy pipeline mode by default so CI/local runs remain deterministic even when `PIPELINE_MODE` is set externally.
+
+## 0.3.70
+- **Fix:** Prevent Gemma pipeline sessions from hanging during WebSocket teardown by skipping legacy translation-worker shutdown when the worker is not started.
+- **Fix:** Remove duplicate Gemma warm-up calls during stream startup and reuse the existing warm-up task/events for the alternative pipeline path.
+- **Tests:** Add coverage for Gemma warm-up readiness and `pipeline_mode` schema validation.
+
+## 0.3.69
+- **Pipeline:** Add an alternative `gemma4_e4b` runtime pipeline that performs both audio transcription and translation through a dedicated Gemma service.
+- **Backend:** Add Gemma runtime/server config fields, health reporting, warm-up path, and WebSocket streaming branch for Gemma segment processing.
+- **Admin UI:** Add server settings controls for pipeline mode and Gemma endpoint/model/keep-alive values.
+- **Infra:** Add a `gemma4-server/` service scaffold and optional Compose profile in `aitools/docker-compose.yml`.
+- **Docs:** Update README and `.env.example` with Gemma pipeline setup and configuration guidance.
+
 ## 0.3.68
 - **Backend:** Fix status endpoint health checks for Whisper by correcting the request block indentation.
 

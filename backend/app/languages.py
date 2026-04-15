@@ -754,8 +754,11 @@ for name_lower, codes in _temp_name_to_codes.items():
 
 def get_supported_languages(model_name: str) -> list[dict[str, str]]:
     """Return the list of supported languages for the given model."""
-    if "translategemma" in model_name.lower():
+    lower_model_name = model_name.lower()
+    if "translategemma" in lower_model_name:
         return TRANSLATEGEMMA_LANGUAGES
+    if "gemma-4" in lower_model_name or "gemma4" in lower_model_name:
+        return DEFAULT_SUPPORTED_LANGUAGES
     return DEFAULT_SUPPORTED_LANGUAGES
 
 

@@ -73,6 +73,10 @@ class ServerConfig(BaseModel):
     ollama_base_url: str = Field(..., min_length=1, max_length=255)
     llm_model_translation: str = Field(..., min_length=1, max_length=255)
     ollama_keep_alive_seconds: int = Field(..., ge=0, le=86400)
+    pipeline_mode: str = Field(..., min_length=1, max_length=50)
+    gemma_base_url: str = Field(..., min_length=1, max_length=255)
+    gemma_model: str = Field(..., min_length=1, max_length=255)
+    gemma_keep_alive_seconds: int = Field(..., ge=0, le=86400)
     commit_timeout_seconds: float = Field(..., ge=1.0, le=60.0)
     silence_finalize_seconds: float = Field(..., ge=0.1, le=10.0)
     min_preview_buffer_seconds: float = Field(..., ge=0.1, le=5.0)
@@ -82,12 +86,20 @@ class ServerConfig(BaseModel):
     avg_logprob_skip: float = Field(..., ge=-10.0, le=0.0)
     compression_ratio_skip: float = Field(..., ge=1.0, le=10.0)
 
-    @field_validator("whisper_base_url", "ollama_base_url")
+    @field_validator("whisper_base_url", "ollama_base_url", "gemma_base_url")
     @classmethod
     def validate_endpoint(cls, value: str) -> str:
         parsed = urlparse(value)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("Endpoint must be a valid http(s) URL")
+        return value
+
+    @field_validator("pipeline_mode")
+    @classmethod
+    def validate_pipeline_mode(cls, value: str) -> str:
+        allowed = {"legacy_whisper_ollama", "gemma4_e4b"}
+        if value not in allowed:
+            raise ValueError(f"pipeline_mode must be one of: {', '.join(sorted(allowed))}")
         return value
 
     @field_validator("stable_window_seconds")

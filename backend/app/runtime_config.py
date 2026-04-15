@@ -20,6 +20,10 @@ class RuntimeConfig:
     ollama_base_url: str = settings.ollama_base_url
     llm_model_translation: str = settings.llm_model_translation
     ollama_keep_alive_seconds: int = settings.ollama_keep_alive_seconds
+    pipeline_mode: str = settings.pipeline_mode
+    gemma_base_url: str = settings.gemma_base_url
+    gemma_model: str = settings.gemma_model
+    gemma_keep_alive_seconds: int = settings.gemma_keep_alive_seconds
     commit_timeout_seconds: float = settings.commit_timeout_seconds
     silence_finalize_seconds: float = settings.silence_finalize_seconds
     min_preview_buffer_seconds: float = settings.min_preview_buffer_seconds
