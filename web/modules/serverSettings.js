@@ -22,6 +22,10 @@ export async function loadServerSettings() {
         dom.whisperEndpointInput.value = data.whisper_base_url || '';
         dom.whisperModelInput.value = data.whisper_model || '';
         dom.whisperKeepAliveInput.value = data.whisper_keep_alive_seconds ?? '';
+        dom.pipelineModeInput.value = data.pipeline_mode || 'legacy_whisper_ollama';
+        dom.gemmaEndpointInput.value = data.gemma_base_url || '';
+        dom.gemmaModelInput.value = data.gemma_model || '';
+        dom.gemmaKeepAliveInput.value = data.gemma_keep_alive_seconds ?? '';
         dom.ollamaEndpointInput.value = data.ollama_base_url || '';
         dom.ollamaModelInput.value = data.llm_model_translation || '';
         dom.ollamaKeepAliveInput.value = data.ollama_keep_alive_seconds ?? '';
@@ -50,6 +54,10 @@ export async function handleSaveServerSettings(event) {
         whisper_base_url: dom.whisperEndpointInput.value.trim(),
         whisper_model: dom.whisperModelInput.value.trim(),
         whisper_keep_alive_seconds: Number(dom.whisperKeepAliveInput.value),
+        pipeline_mode: dom.pipelineModeInput.value.trim(),
+        gemma_base_url: dom.gemmaEndpointInput.value.trim(),
+        gemma_model: dom.gemmaModelInput.value.trim(),
+        gemma_keep_alive_seconds: Number(dom.gemmaKeepAliveInput.value),
         ollama_base_url: dom.ollamaEndpointInput.value.trim(),
         llm_model_translation: dom.ollamaModelInput.value.trim(),
         ollama_keep_alive_seconds: Number(dom.ollamaKeepAliveInput.value),

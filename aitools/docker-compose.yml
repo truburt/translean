@@ -81,3 +81,41 @@ services:
         echo 'Pulling translategemma:12b...'
         curl -fsS http://ollama:11434/api/pull -H 'Content-Type: application/json' -d '{"model":"translategemma:12b","stream":false}'
         echo -e "\nDone."
+
+  gemma4-server:
+    build:
+      context: ../gemma4-server
+    container_name: gemma4-server
+    profiles: ["gemma"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    ports:
+      - "8010:8010"
+    environment:
+      - GEMMA_MODEL=google/gemma-4-E4B-it
+      - DEVICE=cuda
+      - MAX_NEW_TOKENS=256
+    volumes:
+      - ./gemma:/root/.cache/huggingface
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - |
+          import urllib.request, sys
+          try:
+            r = urllib.request.urlopen("http://127.0.0.1:8010/health", timeout=2)
+            sys.exit(0 if 200 <= r.status < 300 else 1)
+          except Exception:
+            sys.exit(1)
+      interval: 15m
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped

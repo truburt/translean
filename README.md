@@ -56,6 +56,8 @@ Key variables to review:
 - **Database**: `DATABASE_URL`
 - **Whisper**: `WHISPER_BASE_URL`, `WHISPER_MODEL`, `WHISPER_KEEP_ALIVE_SECONDS`
 - **LLM**: `OLLAMA_BASE_URL`, `LLM_MODEL_TRANSLATION`, `OLLAMA_KEEP_ALIVE_SECONDS`
+- **Pipeline mode**: `PIPELINE_MODE` (`legacy_whisper_ollama` or `gemma4_e4b`)
+- **Gemma 4 E4B**: `GEMMA_BASE_URL`, `GEMMA_MODEL`, `GEMMA_KEEP_ALIVE_SECONDS`
 - **Authorization**: `OIDC_*`
 - **Admin access**: `ADMIN_EMAIL_WHITELIST`
 
@@ -82,6 +84,8 @@ docker compose -f aitools/docker-compose.yml up -d
 ```
 - Runs a `faster-whisper-server` on port 8000.
 - Set `WHISPER_BASE_URL=http://<host>:8000` in `.env`.
+- For Gemma mode, run `docker compose -f aitools/docker-compose.yml --profile gemma up -d gemma4-server`
+  and set `PIPELINE_MODE=gemma4_e4b`, `GEMMA_BASE_URL=http://<host>:8010`.
 
 **Option B: Standalone faster-whisper server**
 ```bash
@@ -118,6 +122,9 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
+E2E tests are marked with `@pytest.mark.e2e` and require reachable external model services
+(Whisper + Ollama for legacy flow). If these services are unavailable, E2E suites are skipped.
+
 **Frontend**
 ```bash
 cd web
@@ -140,9 +147,10 @@ TransLean is split into three cooperative services:
    - Exposes `/status` health checks for the database, Whisper, and Ollama services.
    - Stabilizes Whisper output and translates paragraphs.
 
-3. **AI services (Whisper + Ollama)**
+3. **AI services (Whisper + Ollama, or Gemma 4 E4B)**
    - **Whisper** handles speech-to-text via the bundled `faster-whisper-server` (Docker) or the standalone FastAPI server in `faster-whisper-server/`.
    - **Ollama** handles translation and summarization.
+   - **Gemma 4 E4B pipeline (alternative)** handles both transcription and translation from audio segments via the `gemma4-server/` service.
 
 ### Streaming workflow (high level)
 - The browser streams audio frames to `/ws/stream`.
@@ -151,6 +159,10 @@ TransLean is split into three cooperative services:
 - Stable snapshots are **translated** and stored per paragraph.
 - The client receives live updates, stabilizes paragraphs, and persists history.
 - **Enchant** function rebuilds the transcription and translation for the whole conversation, and creates a summary.
+
+When `PIPELINE_MODE=gemma4_e4b`, the backend routes `/ws/stream` through the Gemma branch: each buffered segment is sent
+to the Gemma service for direct transcription + translation, and paragraphs are emitted as stable updates without the
+legacy background translation worker.
 
 ## 5. FAQ
 
