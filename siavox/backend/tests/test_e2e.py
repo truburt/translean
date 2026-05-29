@@ -7,6 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.app.config import settings
+# Force DEBUG_MODE to False for standard tests
+settings.DEBUG_MODE = False
 from backend.app.db import Base, get_db
 from backend.app.main import app
 
@@ -55,25 +57,49 @@ def test_e2e_full_flow(run_around_tests, monkeypatch):
     import json
     
     mock_responses = [
-        # Call 1: Boxing Single-chunk Flow (both verbatim transcript and transformed text in 1 response)
+        # Call 1: Boxing Chunk 1 ASR (first ~10s - VAD split at silence gap)
         {
             "message": {
-                "content": '{"raw_transcript": "The history of boxing blazes with names like Sullivan, Leonard, Johnson, Ross, and other great champions. But in boxing’s roll of honor, none stands above those of Jack Dempsey and Joe Louis. The date: July 4th, 1919. Jess Willard. Challenger: Jack Dempsey.", "source_language": "English", "target_language": "English", "transformed_text": "- Boxing history features champions like Sullivan, Leonard, Johnson, and Ross.\\n- Jack Dempsey and Joe Louis stand above all others.\\n- On July 4, 1919, challenger Jack Dempsey faced heavyweight champion Jess Willard."}'
+                "content": "The history of boxing blazes with names like Sullivan, Leonard, Johnson, Ross, and other great champions."
             }
         },
-        # Call 2: NATO Chunk 1 (verbatim transcript of first 30s)
+        # Call 2: Boxing Chunk 2 ASR (second ~8s - VAD split at next silence gap)
         {
             "message": {
-                "content": '{"raw_transcript": "alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa quebec romeo sierra tango", "source_language": "English"}'
+                "content": "But in boxing's roll of honor, none stands above those of Jack Dempsey and Joe Louis."
             }
         },
-        # Call 3: NATO Chunk 2 (verbatim transcript of remaining 23.5s)
+        # Call 3: Boxing Chunk 3 ASR (remaining ~12s)
         {
             "message": {
-                "content": '{"raw_transcript": "uniform victor whiskey xray yankee zulu", "source_language": "English"}'
+                "content": "The date: July 4th, 1919. Jess Willard. Challenger: Jack Dempsey."
             }
         },
-        # Call 4: NATO Refinement (combines transcripts and formats)
+        # Call 4: Boxing Refinement (returns JSON formatting)
+        {
+            "message": {
+                "content": '{"source_language": "English", "target_language": "English", "transformed_text": "- Boxing history features champions like Sullivan, Leonard, Johnson, and Ross.\\n- Jack Dempsey and Joe Louis stand above all others.\\n- On July 4, 1919, challenger Jack Dempsey faced heavyweight champion Jess Willard."}'
+            }
+        },
+        # Call 5: NATO Chunk 1 ASR (first ~10s - VAD split at silence gap)
+        {
+            "message": {
+                "content": "alpha bravo charlie delta echo foxtrot golf hotel india juliet"
+            }
+        },
+        # Call 6: NATO Chunk 2 ASR (second ~10s - VAD split at next silence gap)
+        {
+            "message": {
+                "content": "kilo lima mike november oscar papa quebec romeo sierra tango"
+            }
+        },
+        # Call 7: NATO Chunk 3 ASR (remaining ~7s)
+        {
+            "message": {
+                "content": "uniform victor whiskey xray yankee zulu"
+            }
+        },
+        # Call 8: NATO Refinement (combines transcripts and formats)
         {
             "message": {
                 "content": '{"source_language": "English", "target_language": "English", "transformed_text": "- NATO Phonetic Alphabet items detected: alpha, bravo, charlie, delta, echo, foxtrot, golf, hotel, india, juliet, kilo, lima, mike, november, oscar, papa, quebec, romeo, sierra, tango, uniform, victor, whiskey, xray, yankee, zulu."}'
@@ -199,8 +225,8 @@ def test_e2e_full_flow(run_around_tests, monkeypatch):
         assert me_response.status_code == 200
         assert me_response.json()["authenticated"] is False
 
-        # Assert call_index == 4 (verifies 1 Ollama call for sample-30s.wav and 3 calls for sample-nato.wav, confirming chunking worked)
-        assert call_index == 4
+        # Assert call_index == 8 (verifies 4 Ollama calls for sample-30s.wav and 4 calls for sample-nato.wav, confirming chunking worked)
+        assert call_index == 8
 
     finally:
         client.cookies.clear()

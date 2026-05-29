@@ -39,6 +39,17 @@ def verify_google_token(token: str) -> dict:
 
 def get_current_user_from_cookie(request: Request, db: Session = Depends(get_db)) -> User:
     """FastAPI dependency to retrieve the current user session from cookie/auth header."""
+    if settings.DEBUG_MODE:
+        dev_email = "devuser@example.com"
+        dev_name = "Dev User"
+        user = db.query(User).filter(User.email == dev_email).first()
+        if not user:
+            user = User(email=dev_email, name=dev_name)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return user
+
     # We can check cookie first, then authorization header
     session_email = request.cookies.get(settings.SESSION_COOKIE_NAME)
     

@@ -1,5 +1,6 @@
 import os
 import shutil
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Optional
@@ -43,10 +44,14 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def health_check():
     """Health check endpoint testing connectivity."""
     ollama_ok = await ollama_client.check_connection()
+    model_loaded = False
+    if ollama_ok:
+        model_loaded = await ollama_client.is_model_loaded()
     return {
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "ollama_connected": ollama_ok,
+        "ollama_model_loaded": model_loaded,
         "database": "connected"
     }
 
@@ -240,6 +245,110 @@ async def process_audio(
         "created_at": interaction.created_at.isoformat(),
         "audio_path": interaction.audio_path
     }
+
+@app.post("/api/transcribe")
+async def transcribe_audio(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """ASR transcription step 1. Saves audio file and returns verbatim transcription."""
+    # Include a short UUID fragment to prevent filename collisions when multiple
+    # streaming chunks are uploaded within the same second by the same user.
+    uid = uuid.uuid4().hex[:8]
+    filename = f"{current_user.id}_{int(datetime.now(timezone.utc).timestamp())}_{uid}_{file.filename}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save audio file locally: {e}"
+        )
+
+    try:
+        with open(file_path, "rb") as f:
+            audio_bytes = f.read()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to read audio file: {e}"
+        )
+
+    try:
+        raw_transcript = await ollama_client.transcribe_audio(audio_bytes)
+    except Exception as e:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Ollama ASR error: {e}"
+        )
+
+    return {
+        "raw_transcript": raw_transcript,
+        "audio_path": f"/static/uploads/{filename}"
+    }
+
+@app.post("/api/refine")
+async def refine_transcript(
+    request: Request,
+    raw_transcript: str = Form(...),
+    audio_path: str = Form(...),
+    format: str = Form("note"),  # "note" or "message"
+    target_language: str = Form("auto"),
+    custom_instructions: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """ASR text refinement step 2. Refines transcript, translates if requested, and persists results."""
+    if format not in ["note", "message"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid format selected. Must be 'note' or 'message'"
+        )
+
+    try:
+        source_lang, target_lang, transformed_text = await ollama_client.refine_transcript(
+            raw_transcript=raw_transcript,
+            output_format=format,
+            target_language=target_language,
+            custom_instructions=custom_instructions
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Ollama refinement error: {e}"
+        )
+
+    # Save interaction to DB
+    interaction = Interaction(
+        user_id=current_user.id,
+        audio_path=audio_path,
+        raw_transcript=raw_transcript,
+        transformed_text=transformed_text,
+        format=format,
+        source_language=source_lang,
+        target_language=target_lang
+    )
+    
+    db.add(interaction)
+    db.commit()
+    db.refresh(interaction)
+
+    return {
+        "id": interaction.id,
+        "raw_transcript": interaction.raw_transcript,
+        "transformed_text": interaction.transformed_text,
+        "format": interaction.format,
+        "source_language": interaction.source_language,
+        "target_language": interaction.target_language,
+        "created_at": interaction.created_at.isoformat(),
+        "audio_path": interaction.audio_path
+    }
+
 
 # Serve uploaded static audio files
 app.mount("/static/uploads", StaticFiles(directory="uploads"), name="uploads")

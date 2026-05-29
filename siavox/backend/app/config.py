@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     # Google OAuth client ID
     GOOGLE_CLIENT_ID: str = "your-google-client-id.apps.googleusercontent.com"
     
+    # Debug mode to bypass Google Authentication
+    DEBUG_MODE: bool = False
+    
     # Ollama instance details
     OLLAMA_HOST: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "gemma4:e4b"
