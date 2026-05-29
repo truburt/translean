@@ -1,0 +1,53 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "FastAPI: Debug Server",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "backend.app.main:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000",
+                "--reload"
+            ],
+            "jinja": true,
+            "envFile": "${workspaceFolder}/.env",
+            "console": "integratedTerminal",
+            "showReturnValue": true
+        },
+        {
+            "name": "Launch Client (Chrome)",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:8000",
+            "webRoot": "${workspaceFolder}/frontend"
+        },
+        {
+            "name": "Python: Debug Pytest Suite",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "backend/tests"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Server & Client (Chrome)",
+            "configurations": [
+                "FastAPI: Debug Server",
+                "Launch Client (Chrome)"
+            ]
+        }
+    ]
+}
