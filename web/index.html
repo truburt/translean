@@ -434,6 +434,39 @@
           </section>
 
           <section class="p-4 rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] shadow-sm space-y-3">
+            <h2 class="text-lg font-semibold text-[var(--text-primary)]" data-i18n="server_settings_pipeline_title">
+              Pipeline</h2>
+            <div class="space-y-2">
+              <label class="text-sm text-[var(--text-secondary)]" data-i18n="server_settings_pipeline_mode">Mode</label>
+              <select id="pipeline-mode"
+                class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent">
+                <option value="legacy_whisper_ollama">legacy_whisper_ollama</option>
+                <option value="gemma4_e4b">gemma4_e4b</option>
+              </select>
+            </div>
+          </section>
+
+          <section class="p-4 rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] shadow-sm space-y-3">
+            <h2 class="text-lg font-semibold text-[var(--text-primary)]" data-i18n="server_settings_gemma_title">
+              Gemma 4 E4B</h2>
+            <div class="space-y-2">
+              <label class="text-sm text-[var(--text-secondary)]" data-i18n="server_settings_gemma_endpoint">Endpoint</label>
+              <input id="gemma-endpoint" type="url" required
+                class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm text-[var(--text-secondary)]" data-i18n="server_settings_gemma_model">Model</label>
+              <input id="gemma-model" type="text" required
+                class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm text-[var(--text-secondary)]" data-i18n="server_settings_gemma_keep_alive">Keep alive (seconds)</label>
+              <input id="gemma-keep-alive" type="number" min="0" max="86400" step="1" required
+                class="w-full rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-accent" />
+            </div>
+          </section>
+
+          <section class="p-4 rounded-lg border border-[var(--divider)] bg-[var(--bg-app)] shadow-sm space-y-3">
             <h2 class="text-lg font-semibold text-[var(--text-primary)]" data-i18n="server_settings_ollama_title">
               Ollama</h2>
             <div class="space-y-2">

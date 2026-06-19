@@ -41,6 +41,10 @@ from .llm_client import (
     estimate_max_chars,
     MAX_SUMMARY_CONTEXT_TOKENS,
 )
+from .gemma_client import (
+    warm_up as warm_up_gemma,
+    transcribe_and_translate_audio,
+)
 from .repositories import (
     add_paragraph,
     create_conversation,
@@ -140,6 +144,30 @@ async def run_warm_up(websocket: WebSocket, whisper_lang: str, whisper_ready: as
             await websocket.send_json({"status": "warming_up"})
         except Exception:
             pass  # Client might have disconnected
+
+        if runtime_config.pipeline_mode == "gemma4_e4b":
+            logger.info("Starting Gemma 4 E4B warm-up...")
+            ready = await warm_up_gemma()
+            if not ready:
+                logger.error("Gemma warm-up failed.")
+                try:
+                    await websocket.send_json({
+                        "status": "error",
+                        "service": "system",
+                        "error_code": "GEMMA_INIT_FAILED",
+                        "error": "Gemma model initialization failed. Please check backend logs."
+                    })
+                except Exception:
+                    pass
+                return
+            whisper_ready.set()
+            llm_ready.set()
+            try:
+                await websocket.send_json({"status": "whisper_ready"})
+                await websocket.send_json({"status": "llm_ready"})
+            except Exception:
+                pass
+            return
 
         # measure warm-up time
         start_time = time.time()
@@ -294,7 +322,8 @@ def split_text_for_summary(text: str, token_limit: int = MAX_SUMMARY_CONTEXT_TOK
 @router.get("/api/languages")
 async def get_languages():
     """Return supported source and target languages."""
-    langs = get_supported_languages(runtime_config.llm_model_translation)
+    model_hint = runtime_config.gemma_model if runtime_config.pipeline_mode == "gemma4_e4b" else runtime_config.llm_model_translation
+    langs = get_supported_languages(model_hint)
     return {
         "source": langs,
         "target": langs,
@@ -303,7 +332,7 @@ async def get_languages():
 
 @router.get("/status")
 async def status_check(session: AsyncSession = Depends(get_session)):
-    """Report health of database, Whisper, and Ollama services."""
+    """Report health of database and active model services for the selected pipeline."""
     db_status = "ok"
     try:
         await session.execute(text("select 1"))
@@ -313,22 +342,32 @@ async def status_check(session: AsyncSession = Depends(get_session)):
 
     whisper_status = "ok"
     ollama_status = "ok"
+    gemma_status = "ok"
     async with httpx.AsyncClient(timeout=3.0) as client:
-        try:
-            await client.get(f"{runtime_config.whisper_base_url.rstrip('/')}/health")
-        except Exception as e:
-            logger.warning("Whisper service unreachable: %s", e)
-            whisper_status = "unreachable"
-        try:
-            await client.get(f"{runtime_config.ollama_base_url.rstrip('/')}/api/tags")
-        except Exception as e:
-            logger.warning("Ollama service unreachable: %s", e)
-            ollama_status = "unreachable"
+        if runtime_config.pipeline_mode == "gemma4_e4b":
+            try:
+                await client.get(f"{runtime_config.gemma_base_url.rstrip('/')}/health")
+            except Exception as e:
+                logger.warning("Gemma service unreachable: %s", e)
+                gemma_status = "unreachable"
+        else:
+            try:
+                await client.get(f"{runtime_config.whisper_base_url.rstrip('/')}/health")
+            except Exception as e:
+                logger.warning("Whisper service unreachable: %s", e)
+                whisper_status = "unreachable"
+            try:
+                await client.get(f"{runtime_config.ollama_base_url.rstrip('/')}/api/tags")
+            except Exception as e:
+                logger.warning("Ollama service unreachable: %s", e)
+                ollama_status = "unreachable"
 
     return {
         "database": db_status,
         "whisper": whisper_status,
         "ollama": ollama_status,
+        "gemma": gemma_status,
+        "pipeline_mode": runtime_config.pipeline_mode,
     }
 
 
@@ -1164,6 +1203,96 @@ class TranslationWorker:
                 break
 
 
+async def _run_gemma_stream_pipeline(
+    websocket: WebSocket,
+    session: AsyncSession,
+    conversation: models.Conversation,
+    source_language: str | list[str],
+    target_language: str,
+    recording_format: str | None,
+    whisper_ready_event: asyncio.Event,
+    llm_ready_event: asyncio.Event,
+) -> None:
+    """Run the Gemma 4 E4B alternative pipeline (ASR + translation from audio)."""
+    await whisper_ready_event.wait()
+    await llm_ready_event.wait()
+
+    audio_iter = _gather_audio(websocket, str(conversation.id), recording_format=recording_format)
+    current_buffer = bytearray()
+    current_paragraph_index = 0
+    flush_interval_seconds = max(float(runtime_config.commit_timeout_seconds), 1.0)
+    last_flush = time.monotonic()
+
+    async def flush_buffer() -> None:
+        nonlocal current_buffer, current_paragraph_index
+        if not current_buffer:
+            return
+        payload = bytes(current_buffer)
+        current_buffer.clear()
+        result = await transcribe_and_translate_audio(
+            payload,
+            target_language=target_language,
+            source_language=source_language if isinstance(source_language, str) else "auto",
+        )
+        source_text = (result.get("text") or "").strip()
+        translated_text = (result.get("translation") or "").strip()
+        detected_language = result.get("language") or "auto"
+        if not source_text and not translated_text:
+            return
+
+        paragraph = await add_paragraph(
+            session,
+            conversation,
+            current_paragraph_index,
+            source_text,
+            translated_text or source_text,
+            detected_language=detected_language,
+            paragraph_type="stable",
+        )
+        await session.commit()
+        current_paragraph_index += 1
+
+        await websocket.send_json({
+            "conversation_id": str(conversation.id),
+            "paragraph_id": str(paragraph.id),
+            "paragraph_index": paragraph.paragraph_index,
+            "source": paragraph.source_text,
+            "unstable_text": "",
+            "translation": paragraph.translated_text,
+            "detected_language": paragraph.detected_language,
+            "is_final": True,
+            "type": "stable",
+            "translation_pending": False,
+        })
+
+    async for chunk in audio_iter:
+        if isinstance(chunk, dict):
+            if "target_language" in chunk:
+                target_language = get_language_name(chunk["target_language"])
+                conversation.target_language = target_language
+                await session.commit()
+                continue
+            if "source_language" in chunk:
+                sl = chunk["source_language"]
+                source_language = get_language_code(sl) if isinstance(sl, str) else [get_language_code(l) for l in sl]
+                conversation.source_language = source_language if isinstance(source_language, str) else ",".join(source_language)
+                await session.commit()
+                continue
+            if chunk.get("type") == "stop_recording":
+                await flush_buffer()
+                await websocket.send_json({"status": "processing_complete"})
+                continue
+            continue
+
+        current_buffer.extend(chunk)
+        now = time.monotonic()
+        if (now - last_flush) >= flush_interval_seconds:
+            await flush_buffer()
+            last_flush = now
+
+    await flush_buffer()
+
+
 @router.websocket("/ws/stream")
 async def websocket_stream(
     websocket: WebSocket,
@@ -1214,6 +1343,7 @@ async def websocket_stream(
     translation_queue = asyncio.Queue()
     translation_cache: dict[uuid.UUID, str] = {}
     unstable_cache: dict[uuid.UUID, str] = {}
+    worker_task: asyncio.Task | None = None
 
 
     async with SessionLocal() as session:
@@ -1306,6 +1436,23 @@ async def websocket_stream(
             })
         except Exception:
             pass
+
+        if runtime_config.pipeline_mode == "gemma4_e4b":
+            if warmup_task:
+                await warmup_task
+            if not whisper_ready_event.is_set() or not llm_ready_event.is_set():
+                return
+            await _run_gemma_stream_pipeline(
+                websocket=websocket,
+                session=session,
+                conversation=conversation,
+                source_language=source_language,
+                target_language=target_language,
+                recording_format=recording_format,
+                whisper_ready_event=whisper_ready_event,
+                llm_ready_event=llm_ready_event,
+            )
+            return
         
         # Start Worker
         worker = TranslationWorker(translation_queue, websocket, conversation.id, translation_cache, unstable_cache, llm_ready_event)
@@ -1671,21 +1818,21 @@ async def websocket_stream(
             except Exception:
                 pass
         finally:
-            try:
-                # Stop worker
-                translation_queue.put_nowait(None)
-                # Wait for worker to finish processing pending items and shutdown
-                await translation_queue.join()
-                worker_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await worker_task
-            except Exception:
-                pass
-            finally:
-                if warmup_task and not warmup_task.done():
-                    warmup_task.cancel()
+            if worker_task is not None:
+                try:
+                    # Stop worker
+                    translation_queue.put_nowait(None)
+                    # Wait for worker to finish processing pending items and shutdown
+                    await translation_queue.join()
+                    worker_task.cancel()
                     with contextlib.suppress(asyncio.CancelledError):
-                        await warmup_task
+                        await worker_task
+                except Exception:
+                    pass
+            if warmup_task and not warmup_task.done():
+                warmup_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await warmup_task
 
             try:
                 await session.refresh(conversation, attribute_names=["paragraphs"])

@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+import httpx
 
 # Ensure backend/app is importable when running from repo root
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -15,6 +16,22 @@ from app.llm_client import translate_text, generate_title, summarize_text, warm_
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def _ollama_available() -> bool:
+    base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+    try:
+        with httpx.Client(timeout=1.5) as client:
+            response = client.get(f"{base_url}/api/tags")
+            return 200 <= response.status_code < 300
+    except Exception:
+        return False
+
+
+@pytest.fixture(scope="module", autouse=True)
+def require_ollama_for_llm_e2e():
+    if not _ollama_available():
+        pytest.skip("Skipping LLM E2E: Ollama is not reachable.")
 
 @pytest.mark.asyncio
 @pytest.mark.e2e

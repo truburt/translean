@@ -24,6 +24,14 @@ def test_whisper_transcription_round_trip():
     if not base_url or not model_name:
         pytest.skip("E2E Whisper base URL/model not configured.")
 
+    try:
+        with httpx.Client(base_url=base_url.rstrip("/") + "/", timeout=2.0) as client:
+            health = client.get("health")
+            if not (200 <= health.status_code < 300):
+                pytest.skip("Skipping Whisper E2E: whisper service is not healthy.")
+    except Exception:
+        pytest.skip("Skipping Whisper E2E: whisper service is not reachable.")
+
     audio_data = SAMPLE_WEBM.read_bytes()
     expected_text = SAMPLE_TEXT.read_text(encoding="utf-8")
 

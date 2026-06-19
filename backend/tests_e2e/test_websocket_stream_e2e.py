@@ -157,6 +157,15 @@ def get_free_port() -> int:
         return s.getsockname()[1]
 
 
+def _service_is_reachable(url: str, path: str) -> bool:
+    try:
+        with httpx.Client(timeout=1.5) as client:
+            response = client.get(f"{url.rstrip('/')}/{path.lstrip('/')}")
+            return 200 <= response.status_code < 300
+    except Exception:
+        return False
+
+
 @pytest.fixture(scope="module")
 def backend_server() -> Generator[str, None, None]:
     """Launch the backend server in a subprocess on a free port."""
@@ -177,6 +186,13 @@ def backend_server() -> Generator[str, None, None]:
         env["WHISPER_BASE_URL"] = os.getenv("E2E_WHISPER_BASE_URL", "http://localhost:7860")
     if "WHISPER_MODEL" not in env:
         env["WHISPER_MODEL"] = os.getenv("E2E_WHISPER_MODEL", "Systran/faster-whisper-large-v3")
+    if "OLLAMA_BASE_URL" not in env:
+        env["OLLAMA_BASE_URL"] = os.getenv("E2E_OLLAMA_BASE_URL", "http://localhost:11434")
+
+    if not _service_is_reachable(env["WHISPER_BASE_URL"], "/health"):
+        pytest.skip("Skipping WebSocket E2E: Whisper service is not reachable.")
+    if not _service_is_reachable(env["OLLAMA_BASE_URL"], "/api/tags"):
+        pytest.skip("Skipping WebSocket E2E: Ollama service is not reachable.")
 
     # Command to run uvicorn
     cmd = [
