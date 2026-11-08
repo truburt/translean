@@ -1,6 +1,8 @@
 services:
   faster-whisper-server:
-    image: ghcr.io/truburt/faster-whisper-server:latest
+    build:
+      context: ../faster-whisper-server
+      dockerfile: Dockerfile.cuda
     container_name: faster-whisper-server
     deploy:
       resources:

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- **AI tools:** Build the bundled CUDA Whisper server locally instead of pulling the restricted GHCR image (issue #6).
+- **Docs:** Remove the GitHub PAT requirement for AI tools and correct the Whisper port to 7860.
+
 ## 0.3.68
 - **Backend:** Fix status endpoint health checks for Whisper by correcting the request block indentation.
 
