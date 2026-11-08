@@ -78,10 +78,12 @@ Two options are included in this repo:
 
 **Option A: GPU-friendly bundled tools (recommended)**
 ```bash
-docker compose -f aitools/docker-compose.yml up -d
+docker compose -f aitools/docker-compose.yml up -d --build
 ```
-- Runs a `faster-whisper-server` on port 8000.
-- Set `WHISPER_BASE_URL=http://<host>:8000` in `.env`.
+- Builds `faster-whisper-server` from the bundled CUDA Dockerfile; no GitHub token or access to a private Whisper image is required.
+- Requires an NVIDIA GPU and NVIDIA Container Toolkit.
+- Runs `faster-whisper-server` on port 7860 and Ollama on port 11434.
+- Set `WHISPER_BASE_URL=http://<host>:7860` in `.env`, using a host address reachable from the API container.
 
 **Option B: Standalone faster-whisper server**
 ```bash
